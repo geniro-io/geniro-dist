@@ -1,0 +1,98 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "geniro.fullname" . }}-keycloak
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: keycloak
+spec:
+  replicas: {{ .Values.keycloak.replicas }}
+  selector:
+    matchLabels:
+      {{- include "geniro.componentSelectorLabels" (dict "component" "keycloak" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "geniro.componentSelectorLabels" (dict "component" "keycloak" "context" .) | nindent 8 }}
+      annotations:
+        checksum/realm: {{ include (print $.Template.BasePath "/keycloak/realm-configmap.yaml") . | sha256sum }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.keycloak.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: keycloak
+          image: "{{ .Values.keycloak.image.repository }}:{{ .Values.keycloak.image.tag }}"
+          imagePullPolicy: {{ .Values.keycloak.image.pullPolicy }}
+          {{- with .Values.keycloak.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+            - start-dev
+            - --import-realm
+          ports:
+            - containerPort: {{ .Values.keycloak.port }}
+              name: http
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: {{ .Values.keycloak.auth.adminUser | quote }}
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              value: {{ .Values.keycloak.auth.adminPassword | quote }}
+            - name: KC_DB
+              value: "postgres"
+            - name: KC_DB_URL
+              value: {{ printf "jdbc:postgresql://%s/keycloak" (include "geniro.postgresHost" .) | quote }}
+            - name: KC_DB_USERNAME
+              value: {{ if .Values.postgresql.enabled }}{{ .Values.postgresql.auth.username | default "postgres" | quote }}{{ else }}{{ .Values.externalPostgresql.username | default "postgres" | quote }}{{ end }}
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "geniro.secretName" . }}
+                  key: POSTGRES_PASSWORD
+            - name: KC_HEALTH_ENABLED
+              value: "true"
+            - name: KC_FEATURES
+              value: "account-api,account3,admin-api,admin-fine-grained-authz,admin2,authorization,client-policies,client-secret-rotation,dynamic-scopes,step-up-authentication,token-exchange,transient-users,update-email,web-authn"
+          volumeMounts:
+            - name: realm-config
+              mountPath: /opt/keycloak/data/import
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 15
+            failureThreshold: 10
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.keycloak.resources | nindent 12 }}
+      volumes:
+        - name: realm-config
+          configMap:
+            name: {{ include "geniro.fullname" . }}-keycloak-realm
+      {{- with .Values.keycloak.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.keycloak.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.keycloak.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

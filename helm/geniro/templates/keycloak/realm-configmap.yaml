@@ -1,0 +1,73 @@
+{{- if .Values.keycloak.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "geniro.fullname" . }}-keycloak-realm
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+data:
+  geniro-realm.json: |
+    {
+      "id": "geniro",
+      "realm": "geniro",
+      "enabled": true,
+      "loginWithEmailAllowed": true,
+      "duplicateEmailsAllowed": false,
+      "registrationAllowed": false,
+      "rememberMe": false,
+      "verifyEmail": false,
+      "resetPasswordAllowed": true,
+      "accessTokenLifespan": 86400,
+      "ssoSessionIdleTimeout": 86400,
+      "ssoSessionMaxLifespan": 86400,
+      "offlineSessionIdleTimeout": 2592000,
+      "clients": [
+        {
+          "clientId": "geniro",
+          "name": "Geniro",
+          "enabled": true,
+          "publicClient": true,
+          "protocol": "openid-connect",
+          "redirectUris": [
+            {{- if .Values.web.ingress.enabled }}
+            "https://{{ .Values.web.ingress.host }}/*",
+            {{- end }}
+            "http://localhost:4173/*",
+            "http://localhost:5174/*"
+          ],
+          "webOrigins": ["*"],
+          "standardFlowEnabled": true,
+          "directAccessGrantsEnabled": true,
+          "implicitFlowEnabled": false,
+          "serviceAccountsEnabled": false,
+          "authorizationServicesEnabled": false,
+          "frontchannelLogout": true,
+          "rootUrl": "",
+          "adminUrl": "",
+          "baseUrl": "",
+          "attributes": {
+            "post.logout.redirect.uris": "*",
+            "oauth2.device.authorization.grant.enabled": "false"
+          }
+        }
+      ],
+      "users": [
+        {
+          "username": "admin",
+          "enabled": true,
+          "emailVerified": true,
+          "firstName": "Admin",
+          "lastName": "User",
+          "email": "admin@geniro.local",
+          "credentials": [
+            {
+              "type": "password",
+              "value": "Admin123!",
+              "temporary": true
+            }
+          ],
+          "realmRoles": ["default-roles-geniro"]
+        }
+      ]
+    }
+{{- end }}

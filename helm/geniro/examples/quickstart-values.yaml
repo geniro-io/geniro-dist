@@ -1,0 +1,174 @@
+# =============================================================================
+# Geniro — Quick Start Example Values
+# =============================================================================
+# A working configuration with all services enabled and LLM models routed
+# through OpenRouter. Replace placeholder keys with your own.
+#
+# Usage:
+#   helm install geniro ./geniro-dist/helm/geniro -f examples/quickstart-values.yaml
+
+# -----------------------------------------------------------------------------
+# Secrets (REQUIRED — replace placeholders before installing)
+# -----------------------------------------------------------------------------
+secrets:
+  # 64-char hex key for encrypting stored credentials.
+  # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
+
+  # OpenRouter API key — get one at https://openrouter.ai/keys
+  openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
+
+  # LiteLLM admin key — used to manage models via the LiteLLM admin UI
+  litellmMasterKey: "sk-litellm-master-key"
+
+  # GitHub App (optional — needed for GitHub integration)
+  # githubApp:
+  #   id: "123456"
+  #   privateKey: |
+  #     -----BEGIN RSA PRIVATE KEY-----
+  #     ...
+  #     -----END RSA PRIVATE KEY-----
+  #   clientId: "Iv1.abc123"
+  #   clientSecret: "your-client-secret"
+
+# -----------------------------------------------------------------------------
+# API
+# -----------------------------------------------------------------------------
+api:
+  ingress:
+    enabled: true
+    className: nginx
+    host: api.geniro.example.com
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    # tls:
+    #   - secretName: api-geniro-tls
+    #     hosts:
+    #       - api.geniro.example.com
+
+# -----------------------------------------------------------------------------
+# Web
+# -----------------------------------------------------------------------------
+web:
+  ingress:
+    enabled: true
+    className: nginx
+    host: geniro.example.com
+    # tls:
+    #   - secretName: geniro-web-tls
+    #     hosts:
+    #       - geniro.example.com
+
+# -----------------------------------------------------------------------------
+# LiteLLM — Model Configuration via OpenRouter
+# -----------------------------------------------------------------------------
+# All models are routed through OpenRouter (https://openrouter.ai).
+# You only need a single OpenRouter API key to access models from
+# Anthropic, OpenAI, Google, DeepSeek, and more.
+#
+# To add more models, see: https://openrouter.ai/models
+litellm:
+  enabled: true
+  config:
+    general_settings:
+      store_model_in_db: true
+      store_prompts_in_spend_logs: true
+      forward_client_headers_to_llm_api: true
+    litellm_settings:
+      proxy_logging: false
+      success_logging: true
+      drop_params: true
+    model_list:
+      # ── Anthropic (Claude) ──────────────────────────────────────────────
+      - model_name: claude-sonnet-4-6
+        litellm_params:
+          model: openrouter/anthropic/claude-sonnet-4-6
+          api_key: os.environ/OPENROUTER_API_KEY
+          max_tokens: 64000
+          base_model: claude-sonnet-4-6
+      - model_name: claude-haiku-4-5
+        litellm_params:
+          model: openrouter/anthropic/claude-haiku-4-5
+          api_key: os.environ/OPENROUTER_API_KEY
+          base_model: claude-haiku-4.5
+
+      # ── OpenAI ──────────────────────────────────────────────────────────
+      - model_name: gpt-4o-mini
+        litellm_params:
+          model: openrouter/openai/gpt-4o-mini
+          api_key: os.environ/OPENROUTER_API_KEY
+
+      # ── Embeddings ──────────────────────────────────────────────────────
+      - model_name: text-embedding-3-small
+        litellm_params:
+          model: openrouter/openai/text-embedding-3-small
+          api_key: os.environ/OPENROUTER_API_KEY
+          base_model: text-embedding-3-small
+
+      # ── Google ──────────────────────────────────────────────────────────
+      - model_name: gemini-2.5-flash
+        litellm_params:
+          model: openrouter/google/gemini-2.5-flash-preview
+          api_key: os.environ/OPENROUTER_API_KEY
+
+      # ── DeepSeek ────────────────────────────────────────────────────────
+      - model_name: deepseek-chat
+        litellm_params:
+          model: openrouter/deepseek/deepseek-chat
+          api_key: os.environ/OPENROUTER_API_KEY
+
+# -----------------------------------------------------------------------------
+# Keycloak
+# -----------------------------------------------------------------------------
+keycloak:
+  enabled: true
+  auth:
+    adminUser: admin
+    adminPassword: admin   # Change in production!
+  ingress:
+    enabled: true
+    className: nginx
+    host: auth.geniro.example.com
+    # tls:
+    #   - secretName: keycloak-tls
+    #     hosts:
+    #       - auth.geniro.example.com
+
+# -----------------------------------------------------------------------------
+# PostgreSQL — use the bundled instance (default)
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "change-me-in-production"
+    password: "change-me-in-production"
+
+# To use an external PostgreSQL instead, set:
+# postgresql:
+#   enabled: false
+# externalPostgresql:
+#   host: "your-rds-host.amazonaws.com"
+#   port: 5432
+#   username: "geniro"
+#   password: "your-password"
+#   database: "geniro"
+#   ssl: true
+
+# -----------------------------------------------------------------------------
+# Redis — use the bundled instance (default)
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+
+# To use an external Redis (e.g., ElastiCache), set:
+# redis:
+#   enabled: false
+# externalRedis:
+#   host: "your-redis.cache.amazonaws.com"
+#   port: 6379
+
+# -----------------------------------------------------------------------------
+# Qdrant — vector database for embeddings
+# -----------------------------------------------------------------------------
+qdrant:
+  enabled: true

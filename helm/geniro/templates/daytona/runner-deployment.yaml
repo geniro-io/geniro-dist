@@ -1,0 +1,60 @@
+{{- if .Values.daytona.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "geniro.fullname" . }}-daytona-runner
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: daytona-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "geniro.componentSelectorLabels" (dict "component" "daytona-runner" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "geniro.componentSelectorLabels" (dict "component" "daytona-runner" "context" .) | nindent 8 }}
+    spec:
+      containers:
+        - name: daytona-runner
+          image: "{{ .Values.daytona.runner.image.repository }}:{{ .Values.daytona.runner.image.tag }}"
+          imagePullPolicy: {{ .Values.daytona.runner.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.daytona.runner.port }}
+              name: http
+          env:
+            - name: DAYTONA_API_URL
+              value: {{ printf "http://%s-daytona-api:%v/api" (include "geniro.fullname" .) .Values.daytona.api.port | quote }}
+            - name: DAYTONA_RUNNER_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "geniro.secretName" . }}
+                  key: DAYTONA_RUNNER_API_KEY
+            - name: API_PORT
+              value: {{ .Values.daytona.runner.port | quote }}
+            - name: API_VERSION
+              value: "2"
+            - name: RUNNER_DOMAIN
+              value: {{ .Values.daytona.api.env.proxyDomain | quote }}
+            - name: LOG_LEVEL
+              value: "info"
+            - name: DAEMON_START_TIMEOUT_SEC
+              value: "120"
+            - name: SANDBOX_START_TIMEOUT_SEC
+              value: "120"
+          securityContext:
+            {{- toYaml .Values.daytona.runner.securityContext | nindent 12 }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.daytona.runner.resources | nindent 12 }}
+{{- end }}

@@ -1,0 +1,56 @@
+{{- if .Values.daytona.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "geniro.fullname" . }}-daytona-proxy
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: daytona-proxy
+  annotations:
+    checksum/config: {{ include (print $.Template.BasePath "/daytona/proxy-configmap.yaml") . | sha256sum }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "geniro.componentSelectorLabels" (dict "component" "daytona-proxy" "context" .) | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "geniro.componentSelectorLabels" (dict "component" "daytona-proxy" "context" .) | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/daytona/proxy-configmap.yaml") . | sha256sum }}
+    spec:
+      containers:
+        - name: nginx
+          image: "{{ .Values.daytona.proxy.image.repository }}:{{ .Values.daytona.proxy.image.tag }}"
+          ports:
+            - containerPort: {{ .Values.daytona.proxy.port }}
+              name: http
+          volumeMounts:
+            - name: proxy-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+          resources:
+            {{- toYaml .Values.daytona.proxy.resources | nindent 12 }}
+      volumes:
+        - name: proxy-config
+          configMap:
+            name: {{ include "geniro.fullname" . }}-daytona-proxy-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "geniro.fullname" . }}-daytona-proxy
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: daytona-proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.daytona.proxy.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "geniro.componentSelectorLabels" (dict "component" "daytona-proxy" "context" .) | nindent 4 }}
+{{- end }}

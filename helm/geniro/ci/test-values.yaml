@@ -1,0 +1,41 @@
+# Minimal values for helm lint and helm template validation
+secrets:
+  credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  openrouterApiKey: "sk-or-test"
+  litellmMasterKey: "test-master"
+
+api:
+  ingress:
+    enabled: true
+    host: api.geniro.test
+
+web:
+  ingress:
+    enabled: true
+    host: geniro.test
+
+litellm:
+  enabled: true
+
+daytona:
+  enabled: true
+  api:
+    env:
+      adminApiKey: "test-admin-key"
+      runnerApiKey: "test-runner-key"
+      encryptionKey: "0123456789abcdef0123456789abcdef"
+      encryptionSalt: "fedcba9876543210fedcba9876543210"
+
+keycloak:
+  ingress:
+    enabled: true
+    host: auth.geniro.test
+
+postgresql:
+  enabled: true
+
+redis:
+  enabled: true
+
+qdrant:
+  enabled: true

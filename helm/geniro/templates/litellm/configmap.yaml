@@ -1,0 +1,11 @@
+{{- if .Values.litellm.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "geniro.fullname" . }}-litellm-config
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    {{- toYaml .Values.litellm.config | nindent 4 }}
+{{- end }}

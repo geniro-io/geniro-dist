@@ -1,0 +1,57 @@
+Geniro has been deployed!
+
+=== Access ===
+
+{{- if .Values.web.ingress.enabled }}
+Web UI:  https://{{ .Values.web.ingress.host }}
+{{- else }}
+Web UI (via port-forward):
+  kubectl port-forward svc/{{ include "geniro.fullname" . }}-web {{ .Values.web.service.port }}:{{ .Values.web.service.port }} -n {{ .Release.Namespace }}
+  Then open: http://localhost:{{ .Values.web.service.port }}
+{{- end }}
+
+{{- if .Values.api.ingress.enabled }}
+API:     https://{{ .Values.api.ingress.host }}/api
+{{- else }}
+API (via port-forward):
+  kubectl port-forward svc/{{ include "geniro.fullname" . }}-api {{ .Values.api.service.port }}:{{ .Values.api.service.port }} -n {{ .Release.Namespace }}
+{{- end }}
+
+=== First Login ===
+
+{{- if .Values.keycloak.enabled }}
+Default credentials (Keycloak realm):
+  Username: admin
+  Password: Admin123!  (temporary — you will be prompted to change it)
+{{- else }}
+Using external Keycloak at: {{ .Values.externalKeycloak.url }}
+Realm: {{ .Values.externalKeycloak.realm }}
+{{- end }}
+
+=== Important Notes ===
+
+1. CREDENTIAL_ENCRYPTION_KEY: This key encrypts all stored credentials (GitHub PATs,
+   API keys, etc.). Back it up securely. If lost, all stored credentials become
+   unrecoverable.
+
+2. Frontend Config: The Web image has API_URL compiled in at build time via
+   geniro-web/src/config/production.ts. If you are using custom domains, you must
+   edit production.ts and rebuild the web image before deploying.
+
+3. Docker Socket: The API mounts the host Docker socket for tool execution containers.
+   If your cluster does not allow this, set api.mountDockerSocket=false and configure
+   Daytona as the runtime instead (daytona.enabled=true).
+
+4. Ingress Controller: If you enabled ingress, ensure an ingress controller
+   (e.g., ingress-nginx) is installed in your cluster.
+
+=== Useful Commands ===
+
+Watch pod status:
+  kubectl get pods -n {{ .Release.Namespace }} -w
+
+Verify API is running:
+  kubectl rollout status deployment/{{ include "geniro.fullname" . }}-api -n {{ .Release.Namespace }}
+
+View API logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/component=api -f
