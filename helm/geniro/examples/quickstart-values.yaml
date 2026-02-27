@@ -172,3 +172,43 @@ redis:
 # -----------------------------------------------------------------------------
 qdrant:
   enabled: true
+
+# -----------------------------------------------------------------------------
+# Zitadel (alternative identity provider — disabled by default)
+# -----------------------------------------------------------------------------
+# To use Zitadel instead of Keycloak, uncomment the block below and set
+# keycloak.enabled=false. See examples/zitadel-values.yaml for a full example.
+#
+# zitadel:
+#   enabled: true
+#   image:
+#     tag: v3.4.7
+#   zitadel:
+#     masterkey: "REPLACE_ME_EXACTLY_32_CHARACTERS"
+#     configmapConfig:
+#       ExternalDomain: "auth.geniro.example.com"
+#       ExternalSecure: true
+#       ExternalPort: 443
+#       TLS:
+#         Enabled: false
+#       Database:
+#         Postgres:
+#           Host: "geniro-postgresql"   # Adjust to your release name
+#           User:
+#             Password: "change-me-in-production"
+#           Admin:
+#             Password: "change-me-in-production"
+#       FirstInstance:
+#         Org:
+#           Name: "Geniro"
+#           Human:
+#             Username: "zitadel-admin@geniro.example.com"
+#             # REQUIRED: Set a strong password at install time
+#             Password: ""
+#             PasswordChangeRequired: true
+# keycloak:
+#   enabled: false
+# api:
+#   env:
+#     authProvider: "zitadel"
+#     zitadelClientId: ""   # Set after Zitadel first boot

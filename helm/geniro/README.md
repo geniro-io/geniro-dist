@@ -14,6 +14,7 @@ Umbrella Helm chart for the **Geniro AI Agent Graph Platform**. Deploys the API,
 # Add dependency chart repos
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo add qdrant https://qdrant.github.io/qdrant-helm
+helm repo add zitadel https://charts.zitadel.com
 helm repo update
 
 # Download subchart dependencies
@@ -45,6 +46,8 @@ After install, follow the NOTES output for port-forward commands.
 | `postgresql.enabled` | Deploy bundled PostgreSQL | `true` |
 | `redis.enabled` | Deploy bundled Redis | `true` |
 | `keycloak.enabled` | Deploy bundled Keycloak | `true` |
+| `zitadel.enabled` | Deploy bundled Zitadel (alternative to Keycloak) | `false` |
+| `zitadel.zitadel.masterkey` | 32-char encryption key for Zitadel | `""` |
 | `qdrant.enabled` | Deploy bundled Qdrant | `true` |
 
 See [`values.yaml`](values.yaml) for the full reference with comments.
@@ -102,6 +105,44 @@ helm install geniro ./geniro-dist/helm/geniro \
 ```
 
 The Daytona runner pod requires `privileged: true` security context for container-in-container execution.
+
+See [`examples/daytona-values.yaml`](examples/daytona-values.yaml) for a complete configuration.
+
+## Using Zitadel as Identity Provider
+
+Zitadel can be used instead of Keycloak as the OIDC identity provider. The chart bundles the official Zitadel Helm subchart (pinned to v3.4.7 by default, since v4.x requires a separate login container).
+
+> **Note:** Requires Kubernetes 1.30+ when Zitadel is enabled.
+
+```bash
+helm install geniro ./geniro-dist/helm/geniro \
+  -f examples/zitadel-values.yaml \
+  --set secrets.credentialEncryptionKey=<64-char-hex> \
+  --set zitadel.zitadel.masterkey=<32-char-key>
+```
+
+**Important:** Zitadel generates OIDC client IDs dynamically at first boot. After the Zitadel pod is ready, retrieve the client ID from the Zitadel console and upgrade the release:
+
+```bash
+helm upgrade geniro ./geniro-dist/helm/geniro \
+  --reuse-values \
+  --set api.env.zitadelClientId=<CLIENT_ID> \
+  --set api.env.authProvider=zitadel
+```
+
+To use an external Zitadel instance instead of the bundled one:
+
+```bash
+helm install geniro ./geniro-dist/helm/geniro \
+  --set zitadel.enabled=false \
+  --set api.env.authProvider=zitadel \
+  --set externalZitadel.url=https://zitadel.example.com \
+  --set externalZitadel.issuer=https://zitadel.example.com \
+  --set api.env.zitadelClientId=<CLIENT_ID> \
+  --set secrets.credentialEncryptionKey=<64-char-hex>
+```
+
+See [`examples/zitadel-values.yaml`](examples/zitadel-values.yaml) for a fully commented configuration.
 
 ## Web Frontend Note
 

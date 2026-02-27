@@ -1,0 +1,175 @@
+# =============================================================================
+# Geniro — Zitadel Identity Provider Example Values
+# =============================================================================
+# A complete configuration using Zitadel as the identity provider instead of
+# Keycloak. All LLM models are routed through OpenRouter.
+#
+# Usage:
+#   helm install geniro ./geniro-dist/helm/geniro -f examples/zitadel-values.yaml
+#
+# IMPORTANT: After first install, Zitadel generates OIDC client IDs dynamically.
+# You must retrieve the client ID and upgrade the release:
+#   helm upgrade geniro ./geniro-dist/helm/geniro \
+#     -f examples/zitadel-values.yaml \
+#     --set api.env.zitadelClientId=<CLIENT_ID>
+
+# -----------------------------------------------------------------------------
+# Secrets (REQUIRED -- replace placeholders before installing)
+# -----------------------------------------------------------------------------
+secrets:
+  # 64-char hex key for encrypting stored credentials.
+  # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+  credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
+
+  # OpenRouter API key -- get one at https://openrouter.ai/keys
+  openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
+
+  # LiteLLM admin key -- used to manage models via the LiteLLM admin UI
+  litellmMasterKey: "sk-litellm-master-key"
+
+  # GitHub App (optional -- needed for GitHub integration)
+  # githubApp:
+  #   id: "123456"
+  #   privateKey: |
+  #     -----BEGIN RSA PRIVATE KEY-----
+  #     ...
+  #     -----END RSA PRIVATE KEY-----
+  #   clientId: "Iv1.abc123"
+  #   clientSecret: "your-client-secret"
+
+# -----------------------------------------------------------------------------
+# API
+# -----------------------------------------------------------------------------
+api:
+  env:
+    authProvider: "zitadel"
+    zitadelClientId: ""   # Set after Zitadel first boot (see NOTES output)
+
+  ingress:
+    enabled: true
+    className: nginx
+    host: api.geniro.example.com
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    # tls:
+    #   - secretName: api-geniro-tls
+    #     hosts:
+    #       - api.geniro.example.com
+
+# -----------------------------------------------------------------------------
+# Web
+# -----------------------------------------------------------------------------
+web:
+  ingress:
+    enabled: true
+    className: nginx
+    host: geniro.example.com
+    # tls:
+    #   - secretName: geniro-web-tls
+    #     hosts:
+    #       - geniro.example.com
+
+# -----------------------------------------------------------------------------
+# LiteLLM -- Model Configuration via OpenRouter
+# -----------------------------------------------------------------------------
+litellm:
+  enabled: true
+  config:
+    general_settings:
+      store_model_in_db: true
+      store_prompts_in_spend_logs: true
+      forward_client_headers_to_llm_api: true
+    litellm_settings:
+      proxy_logging: false
+      success_logging: true
+      drop_params: true
+    model_list:
+      - model_name: claude-sonnet-4-6
+        litellm_params:
+          model: openrouter/anthropic/claude-sonnet-4-6
+          api_key: os.environ/OPENROUTER_API_KEY
+          max_tokens: 64000
+          base_model: claude-sonnet-4-6
+      - model_name: gpt-4o-mini
+        litellm_params:
+          model: openrouter/openai/gpt-4o-mini
+          api_key: os.environ/OPENROUTER_API_KEY
+      - model_name: text-embedding-3-small
+        litellm_params:
+          model: openrouter/openai/text-embedding-3-small
+          api_key: os.environ/OPENROUTER_API_KEY
+          base_model: text-embedding-3-small
+
+# -----------------------------------------------------------------------------
+# Zitadel (identity provider)
+# -----------------------------------------------------------------------------
+# Zitadel v3.4.7 is pinned because the Helm chart defaults to v4.x.
+# v3.x still includes Login v1 built-in (no separate login container needed).
+zitadel:
+  enabled: true
+  image:
+    tag: v3.4.7
+  # The subchart nests its runtime config under a "zitadel" key.
+  zitadel:
+    # Exactly 32 characters. Generate with: openssl rand -base64 24 | head -c 32
+    masterkey: "REPLACE_ME_EXACTLY_32_CHARACTERS"
+    configmapConfig:
+      ExternalSecure: true
+      ExternalDomain: "auth.geniro.example.com"
+      ExternalPort: 443
+      TLS:
+        Enabled: false   # TLS is terminated at the ingress/load balancer
+      Database:
+        Postgres:
+          Host: "geniro-postgresql"   # Adjust if using fullnameOverride
+          Port: 5432
+          Database: zitadel
+          User:
+            Username: postgres
+            Password: "change-me-in-production"
+            SSL:
+              Mode: disable
+          Admin:
+            Username: postgres
+            Password: "change-me-in-production"
+            SSL:
+              Mode: disable
+      FirstInstance:
+        Org:
+          Name: "Geniro"
+          Human:
+            Username: "zitadel-admin@geniro.example.com"
+            # REQUIRED: Set a strong password at install time
+            Password: ""
+            PasswordChangeRequired: true
+          Machine:
+            Machine:
+              Username: "geniro-init-sa"
+              Name: "Geniro Init Service Account"
+            Pat:
+              ExpirationDate: "2030-01-01T00:00:00Z"
+
+# Disable Keycloak when using Zitadel
+keycloak:
+  enabled: false
+
+# -----------------------------------------------------------------------------
+# PostgreSQL -- use the bundled instance (default)
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "change-me-in-production"
+    password: "change-me-in-production"
+
+# -----------------------------------------------------------------------------
+# Redis -- use the bundled instance (default)
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# Qdrant -- vector database for embeddings
+# -----------------------------------------------------------------------------
+qdrant:
+  enabled: true

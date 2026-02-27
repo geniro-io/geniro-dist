@@ -1,0 +1,18 @@
+# CI fixture: external Zitadel (subchart disabled, external URL populated)
+# Exercises the externalZitadel fallback path in helpers
+secrets:
+  credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  openrouterApiKey: "sk-or-test"
+  litellmMasterKey: "test-master"
+
+keycloak:
+  enabled: false
+
+api:
+  env:
+    authProvider: "zitadel"
+    zitadelClientId: "test-client-id"
+
+externalZitadel:
+  url: "https://zitadel.example.com"
+  issuer: "https://zitadel.example.com"

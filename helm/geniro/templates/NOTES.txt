@@ -28,6 +28,29 @@ Using external Keycloak at: {{ .Values.externalKeycloak.url }}
 Realm: {{ .Values.externalKeycloak.realm }}
 {{- end }}
 
+{{- if .Values.zitadel.enabled }}
+
+=== Zitadel Post-Install (Required) ===
+
+Zitadel generates OIDC client IDs dynamically at first boot.
+After the Zitadel pod is Ready, complete setup:
+
+1. Port-forward Zitadel:
+   kubectl port-forward svc/{{ .Release.Name }}-zitadel 8080:8080 -n {{ .Release.Namespace }}
+
+2. Log in at http://localhost:8080 with your FirstInstance admin credentials.
+
+3. Create an OIDC application for Geniro (or use the one created by init).
+   Copy the generated Client ID.
+
+4. Upgrade the release with the client ID:
+   helm upgrade {{ .Release.Name }} ./helm/geniro \
+     --reuse-values \
+     --set api.env.zitadelClientId=<CLIENT_ID> \
+     --set api.env.authProvider=zitadel
+
+{{- end }}
+
 === Important Notes ===
 
 1. CREDENTIAL_ENCRYPTION_KEY: This key encrypts all stored credentials (GitHub PATs,

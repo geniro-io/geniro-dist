@@ -114,6 +114,28 @@ Resolve LiteLLM base URL.
 {{- end }}
 
 {{/*
+Resolve Zitadel base URL.
+*/}}
+{{- define "geniro.zitadelUrl" -}}
+{{- if .Values.zitadel.enabled }}
+{{- printf "http://%s-zitadel:8080" .Release.Name }}
+{{- else }}
+{{- .Values.externalZitadel.url }}
+{{- end }}
+{{- end }}
+
+{{/*
+Resolve Zitadel OIDC issuer URL.
+*/}}
+{{- define "geniro.zitadelIssuer" -}}
+{{- if .Values.zitadel.enabled }}
+{{- printf "http://%s-zitadel:8080" .Release.Name }}
+{{- else }}
+{{- .Values.externalZitadel.issuer }}
+{{- end }}
+{{- end }}
+
+{{/*
 Secret name — existing or generated.
 */}}
 {{- define "geniro.secretName" -}}

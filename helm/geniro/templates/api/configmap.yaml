@@ -40,10 +40,10 @@ data:
   KEYCLOAK_REALM: {{ .Values.api.env.keycloakRealm | default "geniro" | quote }}
   KEYCLOAK_CLIENT_ID: {{ .Values.api.env.keycloakClientId | default "geniro" | quote }}
 
-  # Auth — Zitadel (alternative, out of scope for v1 — leave empty)
-  ZITADEL_URL: {{ .Values.api.env.zitadelUrl | default "" | quote }}
-  ZITADEL_ISSUER: {{ .Values.api.env.zitadelIssuer | default "" | quote }}
-  ZITADEL_CLIENT_ID: {{ .Values.api.env.zitadelClientId | default "geniro" | quote }}
+  # Auth — Zitadel (set api.env.authProvider=zitadel to activate)
+  ZITADEL_URL: {{ include "geniro.zitadelUrl" . | quote }}
+  ZITADEL_ISSUER: {{ include "geniro.zitadelIssuer" . | quote }}
+  ZITADEL_CLIENT_ID: {{ .Values.api.env.zitadelClientId | default "" | quote }}
 
   # LiteLLM
   {{- if .Values.litellm.enabled }}

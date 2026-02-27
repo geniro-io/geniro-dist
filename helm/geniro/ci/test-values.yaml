@@ -31,6 +31,22 @@ keycloak:
     enabled: true
     host: auth.geniro.test
 
+# Intentionally keeps keycloak.enabled at its default (true) to test
+# the Keycloak + Zitadel both-enabled render path.
+zitadel:
+  enabled: true
+  zitadel:
+    masterkey: "MasterkeyNeedsToHave32Characters"
+    configmapConfig:
+      ExternalDomain: "zitadel.geniro.test"
+      Database:
+        Postgres:
+          Host: "geniro-test-postgresql"
+          User:
+            Password: "geniro"
+          Admin:
+            Password: "geniro"
+
 postgresql:
   enabled: true
 

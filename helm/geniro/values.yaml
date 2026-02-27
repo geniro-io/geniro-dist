@@ -65,10 +65,9 @@ api:
     keycloakUrl: ""
     keycloakRealm: "geniro"
     keycloakClientId: "geniro"
-    # Zitadel (leave empty unless AUTH_PROVIDER=zitadel — out of scope for v1)
-    zitadelUrl: ""
-    zitadelIssuer: ""
-    zitadelClientId: "geniro"
+    # Zitadel — URL and issuer are resolved automatically when zitadel.enabled=true.
+    # Set clientId after Zitadel first-boot OIDC app creation (see NOTES.txt).
+    zitadelClientId: ""
 
 # -----------------------------------------------------------------------------
 # Web (Frontend — React/Vite)
@@ -311,6 +310,61 @@ externalKeycloak:
   url: ""
   realm: geniro
   clientId: geniro
+
+# -----------------------------------------------------------------------------
+# Zitadel (identity provider — optional, disabled by default)
+# -----------------------------------------------------------------------------
+# Use instead of Keycloak when AUTH_PROVIDER=zitadel.
+# Enable with zitadel.enabled=true and set keycloak.enabled=false.
+zitadel:
+  enabled: false
+  image:
+    tag: v3.4.7   # Pin to v3.x; the chart defaults to v4.x
+  # The subchart nests its runtime config under a "zitadel" key in its own values.
+  # From the parent chart, these become zitadel.zitadel.masterkey, etc.
+  zitadel:
+    masterkey: ""    # Exactly 32 characters. Override at install time.
+    configmapConfig:
+      ExternalSecure: false
+      ExternalDomain: "zitadel.geniro.local"
+      ExternalPort: 80
+      TLS:
+        Enabled: false
+      Database:
+        Postgres:
+          Host: ""       # Set at install time (e.g., <release-name>-postgresql)
+          Port: 5432
+          Database: zitadel
+          User:
+            Username: postgres
+            Password: ""
+            SSL:
+              Mode: disable
+          Admin:
+            Username: postgres
+            Password: ""
+            SSL:
+              Mode: disable
+      FirstInstance:
+        Org:
+          Name: "Geniro"
+          Human:
+            Username: "zitadel-admin@geniro.localhost"
+            # REQUIRED: Set a strong password at install time
+            Password: ""
+            PasswordChangeRequired: true
+          Machine:
+            Machine:
+              Username: "geniro-init-sa"
+              Name: "Geniro Init Service Account"
+            Pat:
+              ExpirationDate: "2030-01-01T00:00:00Z"
+
+# External Zitadel — use when zitadel.enabled=false and AUTH_PROVIDER=zitadel
+externalZitadel:
+  url: ""        # e.g., https://zitadel.example.com
+  issuer: ""     # e.g., https://zitadel.example.com (usually same as url)
+  # NOTE: OIDC Client ID is set via api.env.zitadelClientId, not here.
 
 # -----------------------------------------------------------------------------
 # Qdrant (official Helm chart)
