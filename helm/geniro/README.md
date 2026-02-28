@@ -1,175 +1,773 @@
 # Geniro Helm Chart
 
-Umbrella Helm chart for the **Geniro AI Agent Graph Platform**. Deploys the API, Web UI, LiteLLM proxy, and optional Daytona sandbox runtime, along with PostgreSQL, Redis, Keycloak, and Qdrant as bundled dependencies.
+Umbrella Helm chart for the **Geniro AI Agent Graph Platform**. Deploys the full
+platform stack -- API, Web UI, LiteLLM LLM proxy, identity provider (Keycloak or
+Zitadel), and optional Daytona sandbox runtime -- together with PostgreSQL (pgvector),
+Redis, and Qdrant as bundled dependencies.
+
+---
+
+## Architecture Overview
+
+| Component | Image | Default Port | Status |
+|---|---|---|---|
+| **API** (NestJS backend) | `razumru/geniro-api` | 5000 | Always enabled |
+| **Web** (React/Vite frontend) | `razumru/geniro-web` | 4173 | Always enabled |
+| **LiteLLM** (LLM proxy) | `ghcr.io/berriai/litellm` | 4000 | Enabled by default |
+| **Keycloak** (identity provider) | `keycloak/keycloak` | 8080 | Enabled by default |
+| **PostgreSQL** (pgvector) | `pgvector/pgvector:pg17` | 5432 | Subchart, enabled by default |
+| **Redis** | Bitnami default | 6379 | Subchart, enabled by default |
+| **Qdrant** (vector database) | Official | 6333 | Subchart, enabled by default |
+| **Zitadel** (alt identity provider) | `ghcr.io/zitadel/zitadel` | 8080 | Subchart, disabled by default |
+| **Daytona** (sandbox runtime) | `daytonaio/daytona-*` | 3986 | Disabled by default |
+
+PostgreSQL serves as the shared database backend for the API (geniro), Keycloak,
+LiteLLM, and optionally Zitadel and Daytona. The init script automatically creates
+all required databases: `geniro`, `keycloak`, `litellm`, `infisical` (reserved for
+future secrets management integration), `daytona`, and `zitadel`.
+
+---
 
 ## Prerequisites
 
-- [Helm 3.12+](https://helm.sh/docs/intro/install/)
-- Kubernetes 1.27+
-- An ingress controller (e.g., ingress-nginx) if you enable ingress resources
+- **Kubernetes** cluster >= 1.27 (>= 1.30 if enabling Zitadel)
+- **Helm** 3.10+
+- **kubectl** configured for your cluster
+- A **default StorageClass** provisioned in the cluster (or set explicit storage
+  class values for PostgreSQL and Qdrant PVCs)
+- An **OpenRouter API key** ([openrouter.ai/keys](https://openrouter.ai/keys))
+  or direct provider API keys (Anthropic, OpenAI, etc.)
 
-## Quick Start
+---
+
+## Step-by-Step Deployment
+
+### Step 1 -- Add Helm Repositories
 
 ```bash
-# Add dependency chart repos
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo add qdrant https://qdrant.github.io/qdrant-helm
 helm repo add zitadel https://charts.zitadel.com
 helm repo update
-
-# Download subchart dependencies
-helm dependency update ./geniro-dist/helm/geniro
-
-# Install with required secrets
-helm install geniro ./geniro-dist/helm/geniro \
-  --set secrets.credentialEncryptionKey=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))") \
-  --set secrets.openrouterApiKey=sk-or-v1-...
 ```
 
-After install, follow the NOTES output for port-forward commands.
+### Step 2 -- Generate Required Secrets
 
-## Key Values
-
-| Parameter | Description | Default |
-|---|---|---|
-| `secrets.credentialEncryptionKey` | **Required.** 64-char hex key for AES-256-GCM encryption | `""` |
-| `secrets.openrouterApiKey` | OpenRouter API key for LLM access | `""` |
-| `secrets.litellmMasterKey` | LiteLLM admin key | `"master"` |
-| `api.image.tag` | API image tag | `latest` |
-| `api.replicas` | API replica count | `1` |
-| `api.ingress.enabled` | Enable API ingress | `false` |
-| `api.mountDockerSocket` | Mount host Docker socket for tool execution | `false` |
-| `web.image.tag` | Web UI image tag | `latest` |
-| `web.ingress.enabled` | Enable Web UI ingress | `false` |
-| `litellm.enabled` | Deploy LiteLLM proxy | `true` |
-| `daytona.enabled` | Deploy Daytona sandbox runtime | `false` |
-| `postgresql.enabled` | Deploy bundled PostgreSQL | `true` |
-| `redis.enabled` | Deploy bundled Redis | `true` |
-| `keycloak.enabled` | Deploy bundled Keycloak | `true` |
-| `zitadel.enabled` | Deploy bundled Zitadel (alternative to Keycloak) | `false` |
-| `zitadel.zitadel.masterkey` | 32-char encryption key for Zitadel | `""` |
-| `qdrant.enabled` | Deploy bundled Qdrant | `true` |
-
-See [`values.yaml`](values.yaml) for the full reference with comments.
-
-## Example Values
-
-A ready-to-use example configuration with LLM models pre-configured via OpenRouter:
+Generate a 64-character hex key for AES-256-GCM credential encryption:
 
 ```bash
-# Copy and edit the example (replace placeholder keys)
-cp ./geniro-dist/helm/geniro/examples/quickstart-values.yaml my-values.yaml
-vim my-values.yaml
-
-# Install with your values
-helm install geniro ./geniro-dist/helm/geniro -f my-values.yaml
+openssl rand -hex 32
 ```
 
-See [`examples/quickstart-values.yaml`](examples/quickstart-values.yaml) for a fully commented configuration with Anthropic, OpenAI, Google, and DeepSeek models routed through OpenRouter.
+This key encrypts all stored credentials (GitHub PATs, API keys, etc.). **Back it
+up securely.** If lost, all stored credentials become unrecoverable.
+
+You will also need:
+
+| Secret | Purpose | How to Get |
+|---|---|---|
+| `credentialEncryptionKey` | AES-256-GCM encryption of stored credentials | `openssl rand -hex 32` |
+| `openrouterApiKey` | LLM access via OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) |
+| `litellmMasterKey` | LiteLLM admin API authentication | Any strong string (default: `master`) |
+
+### Step 3 -- Download Chart Dependencies
+
+```bash
+helm dependency update ./helm/geniro
+```
+
+This downloads the PostgreSQL, Redis, Qdrant, and Zitadel subcharts into
+`helm/geniro/charts/`.
+
+### Step 4 -- Configure and Install
+
+Copy the quickstart example and edit it with your values:
+
+```bash
+cp ./helm/geniro/examples/quickstart-values.yaml my-values.yaml
+# Edit my-values.yaml — replace all REPLACE_ME placeholders
+```
+
+Install the chart:
+
+```bash
+helm install geniro ./helm/geniro \
+  -f my-values.yaml \
+  -n geniro --create-namespace
+```
+
+Or install with inline overrides (minimal):
+
+```bash
+helm install geniro ./helm/geniro \
+  --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
+  --set secrets.openrouterApiKey=sk-or-v1-YOUR_KEY \
+  -n geniro --create-namespace
+```
+
+### Step 5 -- Verify the Deployment
+
+```bash
+# Watch pods come up
+kubectl get pods -n geniro -w
+
+# Wait for the API to be ready
+kubectl rollout status deployment/geniro-api -n geniro
+
+# Check all components
+kubectl get pods,svc,ingress -n geniro
+```
+
+### Step 6 -- First Login
+
+The bundled Keycloak instance automatically imports the `geniro` realm on first
+startup with a pre-configured user:
+
+| Field | Value |
+|---|---|
+| Username | `admin` |
+| Password | `Admin123!` |
+| Temporary | Yes -- Keycloak forces a password change on first login |
+
+Access the Web UI via port-forward (if ingress is not enabled):
+
+```bash
+kubectl port-forward svc/geniro-web 4173:4173 -n geniro
+# Open http://localhost:4173
+```
+
+---
+
+## LiteLLM Model Configuration
+
+LiteLLM acts as a unified proxy that routes LLM requests to upstream providers.
+The chart seeds a default model list on first startup.
+
+### Default Models
+
+| `model_name` | Provider Route | Role |
+|---|---|---|
+| `claude-sonnet-4-6` | `openrouter/anthropic/claude-sonnet-4-6` | Primary chat / agent model |
+| `gpt-4o-mini` | `openrouter/openai/gpt-4o-mini` | Lightweight chat model |
+| `text-embedding-3-small` | `openrouter/openai/text-embedding-3-small` | **Required** for knowledge base embeddings (Qdrant) |
+
+All three route through OpenRouter using a single `OPENROUTER_API_KEY`.
+
+> **Important:** The `text-embedding-3-small` model (or an equivalent embedding
+> model) is required for the knowledge base feature to work. Without it, document
+> indexing into Qdrant will fail.
+
+### Switching from OpenRouter to Direct Provider Keys
+
+To call providers directly instead of routing through OpenRouter, replace the
+`model_list` entries in your values file with inline API keys:
+
+```yaml
+litellm:
+  config:
+    model_list:
+      - model_name: claude-sonnet-4-6
+        litellm_params:
+          model: anthropic/claude-sonnet-4-6
+          api_key: "sk-ant-your-key-here"
+          max_tokens: 64000
+      - model_name: gpt-4o-mini
+        litellm_params:
+          model: openai/gpt-4o-mini
+          api_key: "sk-your-openai-key"
+      - model_name: text-embedding-3-small
+        litellm_params:
+          model: openai/text-embedding-3-small
+          api_key: "sk-your-openai-key"
+```
+
+> **Security note:** Inline API keys in `litellm.config` are stored in a
+> Kubernetes ConfigMap (not a Secret). For production deployments, use the
+> `secrets.existingSecret` mechanism or an external secrets management tool
+> (e.g., Sealed Secrets, External Secrets Operator) to inject provider keys
+> securely. The LiteLLM container does not have an `extraEnv` mechanism, so
+> `os.environ/` references only work for variables already present in the
+> container's environment (such as `OPENROUTER_API_KEY`, which the chart injects
+> from the Secret resource).
+
+### Adding More Models
+
+Add entries to the `litellm.config.model_list` array in your values file. For
+example, to add Google Gemini via OpenRouter:
+
+```yaml
+litellm:
+  config:
+    model_list:
+      # ... existing models ...
+      - model_name: gemini-2.5-flash
+        litellm_params:
+          model: openrouter/google/gemini-2.5-flash-preview
+          api_key: os.environ/OPENROUTER_API_KEY
+```
+
+Browse available models at [openrouter.ai/models](https://openrouter.ai/models).
+
+### First-Boot Seeding Caveat
+
+The chart sets `store_model_in_db: true` in `general_settings`. This means the
+`model_list` from your values file **only seeds the LiteLLM database on first
+startup**. After first boot:
+
+- **To add/remove models at runtime:** Use the LiteLLM admin API:
+  ```bash
+  # Port-forward to LiteLLM
+  kubectl port-forward svc/geniro-litellm 4000:4000 -n geniro
+
+  # Add a model
+  curl -X POST http://localhost:4000/model/new \
+    -H "Authorization: Bearer <your-litellmMasterKey>" \
+    -H "Content-Type: application/json" \
+    -d '{"model_name": "my-model", "litellm_params": {"model": "openai/gpt-4o"}}'
+  ```
+
+- **To re-seed from values:** Delete the `litellm` database in PostgreSQL and
+  redeploy. This resets all LiteLLM state.
+
+---
+
+## Ingress Setup
+
+Enable ingress for the API, Web, and Keycloak components:
+
+```yaml
+api:
+  ingress:
+    enabled: true
+    className: nginx
+    host: api.geniro.example.com
+    annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+
+web:
+  ingress:
+    enabled: true
+    className: nginx
+    host: geniro.example.com
+
+keycloak:
+  ingress:
+    enabled: true
+    className: nginx
+    host: auth.geniro.example.com
+```
+
+Make sure an ingress controller (e.g., ingress-nginx) is installed in your
+cluster. Verify with:
+
+```bash
+kubectl get ingressclass
+```
+
+## TLS / HTTPS
+
+Add TLS by referencing a Kubernetes TLS Secret (manually created or provisioned
+by cert-manager):
+
+```yaml
+api:
+  ingress:
+    enabled: true
+    className: nginx
+    host: api.geniro.example.com
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls:
+      - secretName: api-geniro-tls
+        hosts:
+          - api.geniro.example.com
+
+web:
+  ingress:
+    enabled: true
+    className: nginx
+    host: geniro.example.com
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls:
+      - secretName: geniro-web-tls
+        hosts:
+          - geniro.example.com
+```
+
+---
+
+## Secrets Management
+
+### Inline Secrets (Default)
+
+By default, the chart creates a Kubernetes Secret from values you provide:
+
+```yaml
+secrets:
+  credentialEncryptionKey: "<64-char-hex>"   # Required
+  openrouterApiKey: "sk-or-v1-..."           # OpenRouter key
+  litellmMasterKey: "my-strong-key"          # LiteLLM admin key
+```
+
+The PostgreSQL password is pulled automatically from `postgresql.auth.postgresPassword`
+(bundled) or `externalPostgresql.password` (external). The LiteLLM database URL
+is computed automatically.
+
+### Using an Existing Secret (`existingSecret`)
+
+For production, manage secrets externally (e.g., via Sealed Secrets, External
+Secrets Operator, or manual creation). Create the Secret with **all required
+keys**:
+
+```bash
+kubectl create secret generic geniro-secrets -n geniro \
+  --from-literal=CREDENTIAL_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
+  --from-literal=OPENROUTER_API_KEY="sk-or-v1-YOUR_KEY" \
+  --from-literal=LITELLM_MASTER_KEY="my-strong-key" \
+  --from-literal=POSTGRES_PASSWORD="your-db-password" \
+  --from-literal=LITELLM_DATABASE_URL="postgresql://postgres:your-db-password@geniro-postgresql:5432/litellm"
+```
+
+Then reference it in your values:
+
+```yaml
+secrets:
+  existingSecret: "geniro-secrets"
+```
+
+When `existingSecret` is set, the chart skips creating its own Secret resource
+and uses the named Secret for all secret references.
+
+---
 
 ## Using External Services
 
-Disable any bundled dependency and point to your own:
+Disable any bundled dependency and point to your own managed instance.
 
-```bash
-# External PostgreSQL
-helm install geniro ./geniro-dist/helm/geniro \
-  --set postgresql.enabled=false \
-  --set externalPostgresql.host=my-pg.example.com \
-  --set externalPostgresql.password=mypassword \
-  --set secrets.credentialEncryptionKey=<64-char-hex>
+### External PostgreSQL
 
-# External Redis
-helm install geniro ./geniro-dist/helm/geniro \
-  --set redis.enabled=false \
-  --set externalRedis.host=my-redis.example.com \
-  --set secrets.credentialEncryptionKey=<64-char-hex>
+```yaml
+postgresql:
+  enabled: false
 
-# External Keycloak
-helm install geniro ./geniro-dist/helm/geniro \
-  --set keycloak.enabled=false \
-  --set externalKeycloak.url=https://auth.example.com \
-  --set externalKeycloak.realm=geniro \
-  --set secrets.credentialEncryptionKey=<64-char-hex>
+externalPostgresql:
+  host: "my-rds-instance.amazonaws.com"
+  port: 5432
+  username: "geniro"
+  password: "your-password"
+  database: "geniro"
+  ssl: true
 ```
 
-## Daytona Sandbox Runtime
+When using an external PostgreSQL, you must create the required databases manually:
+`geniro`, `keycloak` (if using bundled Keycloak), `litellm`, and optionally
+`daytona` and `zitadel`.
 
-To use Daytona instead of (or alongside) the host Docker socket for tool execution:
+### External Redis
 
-```bash
-helm install geniro ./geniro-dist/helm/geniro \
-  --set daytona.enabled=true \
-  --set api.mountDockerSocket=false \
-  --set secrets.credentialEncryptionKey=<64-char-hex>
+```yaml
+redis:
+  enabled: false
+
+externalRedis:
+  host: "my-redis.cache.amazonaws.com"
+  port: 6379
 ```
 
-The Daytona runner pod requires `privileged: true` security context for container-in-container execution.
+### External Keycloak
 
-See [`examples/daytona-values.yaml`](examples/daytona-values.yaml) for a complete configuration.
+```yaml
+keycloak:
+  enabled: false
 
-## Using Zitadel as Identity Provider
+externalKeycloak:
+  url: "https://auth.example.com"
 
-Zitadel can be used instead of Keycloak as the OIDC identity provider. The chart bundles the official Zitadel Helm subchart (pinned to v3.4.7 by default, since v4.x requires a separate login container).
+api:
+  env:
+    authProvider: "keycloak"
+    keycloakRealm: "my-realm"         # sets KEYCLOAK_REALM env var
+    keycloakClientId: "geniro-client" # sets KEYCLOAK_CLIENT_ID env var
+```
 
-> **Note:** Requires Kubernetes 1.30+ when Zitadel is enabled.
+> **NOTE:** The `KEYCLOAK_URL` env var is resolved by the `geniro.keycloakUrl`
+> helper in `_helpers.tpl`, which reads `externalKeycloak.url` when
+> `keycloak.enabled=false`. Do NOT set the URL via `api.env.keycloakUrl` -- that
+> value is not consumed by any template. The realm and client ID are set via
+> `api.env.keycloakRealm` and `api.env.keycloakClientId`.
+
+### External Qdrant
+
+```yaml
+qdrant:
+  enabled: false
+
+externalQdrant:
+  host: "my-qdrant.example.com"
+  port: 6333
+  apiKey: "your-qdrant-api-key"
+```
+
+---
+
+## Storage and Persistence
+
+PostgreSQL and Qdrant both require persistent storage. By default, the subcharts
+create PersistentVolumeClaims using the cluster's default StorageClass.
+
+Check your available storage classes:
 
 ```bash
-helm install geniro ./geniro-dist/helm/geniro \
+kubectl get storageclass
+```
+
+To specify a storage class explicitly:
+
+```yaml
+# PostgreSQL
+postgresql:
+  primary:
+    persistence:
+      storageClass: "gp3"
+      size: 20Gi
+
+# Qdrant
+qdrant:
+  persistence:
+    storageClassName: "gp3"
+    size: 10Gi
+```
+
+Redis runs in standalone mode with persistence disabled by default (in-memory
+cache). To enable Redis persistence:
+
+```yaml
+redis:
+  master:
+    persistence:
+      enabled: true
+      storageClass: "gp3"
+      size: 8Gi
+```
+
+---
+
+## Identity Provider: Keycloak (Default)
+
+Keycloak is deployed as an in-chart template (not a subchart) using the official
+`keycloak/keycloak` image. On first startup it imports the `geniro` realm from a
+ConfigMap-mounted JSON file.
+
+The default realm includes:
+- A `geniro` OIDC client
+- A pre-configured admin user (`admin` / `Admin123!`, temporary password)
+
+Keycloak runs in dev mode (`start-dev --import-realm`). For production, consider
+using an external Keycloak instance or customizing the deployment.
+
+To verify realm import:
+
+```bash
+kubectl logs -n geniro -l app.kubernetes.io/component=keycloak | grep "imported"
+```
+
+---
+
+## Identity Provider: Zitadel (Alternative)
+
+Zitadel can replace Keycloak as the OIDC provider. The chart bundles the official
+Zitadel Helm subchart.
+
+> **Requirement:** Kubernetes >= 1.30 when Zitadel is enabled.
+
+### Enable Zitadel
+
+```bash
+helm install geniro ./helm/geniro \
   -f examples/zitadel-values.yaml \
-  --set secrets.credentialEncryptionKey=<64-char-hex> \
-  --set zitadel.zitadel.masterkey=<32-char-key>
+  --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
+  --set zitadel.zitadel.masterkey="YourExactly32CharacterMasterkey!" \
+  -n geniro --create-namespace
 ```
 
-**Important:** Zitadel generates OIDC client IDs dynamically at first boot. After the Zitadel pod is ready, retrieve the client ID from the Zitadel console and upgrade the release:
+See [`examples/zitadel-values.yaml`](examples/zitadel-values.yaml) for a complete
+configuration reference.
+
+### Post-Install: Retrieve the Client ID
+
+Zitadel generates OIDC client IDs dynamically at first boot. After the Zitadel
+pod is ready:
+
+1. Port-forward to Zitadel:
+   ```bash
+   kubectl port-forward svc/geniro-zitadel 8080:8080 -n geniro
+   ```
+
+2. Log in at `http://localhost:8080` with your `FirstInstance` admin credentials.
+
+3. Navigate to the OIDC application created for Geniro and copy the Client ID.
+
+4. Upgrade the release with the client ID:
+   ```bash
+   helm upgrade geniro ./helm/geniro \
+     -f my-values.yaml \
+     --set api.env.zitadelClientId=<CLIENT_ID> \
+     --set api.env.authProvider=zitadel \
+     -n geniro
+   ```
+
+### External Zitadel
+
+To use an existing Zitadel instance instead of the bundled subchart:
 
 ```bash
-helm upgrade geniro ./geniro-dist/helm/geniro \
-  --reuse-values \
-  --set api.env.zitadelClientId=<CLIENT_ID> \
-  --set api.env.authProvider=zitadel
-```
-
-To use an external Zitadel instance instead of the bundled one:
-
-```bash
-helm install geniro ./geniro-dist/helm/geniro \
+helm install geniro ./helm/geniro \
   --set zitadel.enabled=false \
   --set api.env.authProvider=zitadel \
   --set externalZitadel.url=https://zitadel.example.com \
   --set externalZitadel.issuer=https://zitadel.example.com \
   --set api.env.zitadelClientId=<CLIENT_ID> \
-  --set secrets.credentialEncryptionKey=<64-char-hex>
+  --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
+  -n geniro --create-namespace
 ```
 
-See [`examples/zitadel-values.yaml`](examples/zitadel-values.yaml) for a fully commented configuration.
+---
+
+## GitHub App Integration
+
+To enable GitHub integration (repository access, webhooks), configure the GitHub
+App secrets:
+
+```yaml
+secrets:
+  githubApp:
+    id: "123456"
+    privateKey: |
+      -----BEGIN RSA PRIVATE KEY-----
+      ...
+      -----END RSA PRIVATE KEY-----
+    clientId: "Iv1.abc123"
+    clientSecret: "your-client-secret"
+```
+
+These values are injected into the API deployment as environment variables
+(`GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_APP_CLIENT_ID`,
+`GITHUB_APP_CLIENT_SECRET`).
+
+---
+
+## Daytona Sandbox Runtime
+
+Daytona provides isolated sandbox environments for agent code execution as an
+alternative to mounting the host Docker socket.
+
+### Enable Daytona
+
+```yaml
+daytona:
+  enabled: true
+  api:
+    env:
+      adminApiKey: "generate-a-random-key"
+      runnerApiKey: "generate-another-random-key"
+      encryptionKey: "32-char-hex-key"
+      encryptionSalt: "32-char-hex-salt"
+
+api:
+  mountDockerSocket: false   # Disable Docker socket when using Daytona
+```
+
+> **Security Warning:** The Daytona runner pod requires `privileged: true`
+> security context for nested container execution (Docker-in-Docker). This grants
+> full host kernel access. Run Daytona runner pods on dedicated, isolated node
+> pools only.
+
+See [`examples/daytona-values.yaml`](examples/daytona-values.yaml) for a complete
+configuration.
+
+---
 
 ## Web Frontend Note
 
-The Web UI image has `API_URL` compiled at build time in `geniro-web/src/config/production.ts`. For custom domains, edit that file and rebuild the image before deploying.
+The Web UI image has `API_URL` compiled at build time in
+`geniro-web/src/config/production.ts`. For custom domains, edit that file and
+rebuild the image before deploying. The Web deployment does not support runtime
+environment variable injection for the API URL.
+
+---
+
+## Upgrading
+
+### Standard Upgrade Pattern
+
+Always pass your values file explicitly:
+
+```bash
+helm upgrade geniro ./helm/geniro \
+  -f my-values.yaml \
+  -n geniro
+```
+
+### Avoid `--reuse-values` Alone
+
+The `--reuse-values` flag reuses values from the previous release but **skips new
+defaults** introduced in chart updates. This means new configuration keys added in
+a chart upgrade will not be applied. Always pass your values file explicitly, even
+when using `--reuse-values`:
+
+```bash
+# Correct: explicit values file + additional overrides
+helm upgrade geniro ./helm/geniro \
+  -f my-values.yaml \
+  --set api.env.zitadelClientId=<CLIENT_ID> \
+  -n geniro
+
+# Risky: --reuse-values alone may miss new chart defaults
+helm upgrade geniro ./helm/geniro \
+  --reuse-values \
+  --set someNewValue=x \
+  -n geniro
+```
+
+### Adding New Features After Initial Install
+
+When enabling a previously disabled component (e.g., Zitadel, Daytona), always
+pass all required values for that component explicitly. Do not rely on
+`--reuse-values` to pick up new defaults.
+
+---
 
 ## Troubleshooting
 
-**Pods stuck in CrashLoopBackOff:**
+### Pods Stuck in CrashLoopBackOff
+
+Check the logs for the failing component:
+
 ```bash
-kubectl logs -n <namespace> -l app.kubernetes.io/component=api --tail=50
+kubectl logs -n geniro -l app.kubernetes.io/component=api --tail=100
+kubectl logs -n geniro -l app.kubernetes.io/component=keycloak --tail=100
+kubectl logs -n geniro -l app.kubernetes.io/component=litellm --tail=100
 ```
 
-**Database not ready:**
-The API deployment does not include init-containers for database readiness. If the API starts before PostgreSQL is ready, it will crash and restart. Kubernetes will retry automatically. If it persists, check the PostgreSQL pod logs.
+### Database Not Ready
 
-**Keycloak realm not imported:**
-The Keycloak deployment uses `start-dev --import-realm` and mounts the realm JSON at `/opt/keycloak/data/import`. Check that the `geniro-keycloak-realm` configmap exists and Keycloak logs show "Realm 'geniro' imported".
+The API deployment does not include init-containers for database readiness. If the
+API starts before PostgreSQL is ready, it will crash and restart. Kubernetes will
+retry automatically. If it persists beyond a few restarts:
 
-**Ingress not working:**
-Verify an ingress controller is installed: `kubectl get ingressclass`. The chart does not install an ingress controller itself.
+```bash
+# Check PostgreSQL pod status
+kubectl get pods -n geniro -l app.kubernetes.io/component=postgresql
+
+# Check PostgreSQL logs
+kubectl logs -n geniro -l app.kubernetes.io/component=postgresql --tail=50
+```
+
+### Keycloak Realm Not Imported
+
+The Keycloak deployment uses `start-dev --import-realm` and mounts the realm JSON
+from a ConfigMap at `/opt/keycloak/data/import`. Verify:
+
+```bash
+# Check the ConfigMap exists
+kubectl get configmap -n geniro | grep realm
+
+# Check Keycloak logs for import confirmation
+kubectl logs -n geniro -l app.kubernetes.io/component=keycloak | grep -i "import"
+```
+
+### Ingress Not Working
+
+Verify an ingress controller is installed:
+
+```bash
+kubectl get ingressclass
+kubectl get ingress -n geniro
+```
+
+The chart does not install an ingress controller itself.
+
+### LiteLLM Models Not Available
+
+If models are not showing up after the initial deployment, check:
+
+```bash
+# Verify LiteLLM is running
+kubectl logs -n geniro -l app.kubernetes.io/component=litellm --tail=50
+
+# Check the config was mounted correctly
+kubectl get configmap -n geniro -l app.kubernetes.io/component=litellm -o yaml
+```
+
+Remember: `store_model_in_db: true` means the model list is only seeded on first
+boot. If you changed models after first boot, use the LiteLLM admin API or delete
+the `litellm` database to re-seed.
+
+### PVC Pending
+
+If PostgreSQL or Qdrant pods are stuck in `Pending` with PVC-related events:
+
+```bash
+kubectl get pvc -n geniro
+kubectl describe pvc -n geniro <pvc-name>
+kubectl get storageclass
+```
+
+Ensure a default StorageClass exists or set one explicitly in your values file.
+
+---
 
 ## Linting and Testing
 
+Validate the chart before deploying:
+
 ```bash
 # Lint the chart
-helm lint ./geniro-dist/helm/geniro -f ./geniro-dist/helm/geniro/ci/test-values.yaml
+helm lint ./helm/geniro -f ./helm/geniro/ci/test-values.yaml
 
-# Render templates locally
-helm template geniro ./geniro-dist/helm/geniro -f ./geniro-dist/helm/geniro/ci/test-values.yaml
+# Render all templates locally (catch syntax errors)
+helm template geniro ./helm/geniro -f ./helm/geniro/ci/test-values.yaml > /dev/null
+
+# Render with the quickstart example
+helm template geniro ./helm/geniro \
+  -f ./helm/geniro/examples/quickstart-values.yaml \
+  --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) > /dev/null
 ```
+
+---
+
+## Key Values Reference
+
+| Parameter | Description | Default |
+|---|---|---|
+| `secrets.credentialEncryptionKey` | **Required.** 64-char hex key for AES-256-GCM encryption | `""` |
+| `secrets.openrouterApiKey` | OpenRouter API key for LLM access | `""` |
+| `secrets.litellmMasterKey` | LiteLLM admin API key | `"master"` |
+| `secrets.existingSecret` | Use a pre-existing Secret instead of chart-created one | `""` |
+| `api.image.tag` | API image tag | `latest` |
+| `api.replicas` | API replica count | `1` |
+| `api.ingress.enabled` | Enable API ingress | `false` |
+| `api.mountDockerSocket` | Mount host Docker socket for tool execution | `false` |
+| `api.extraEnv` | Additional env vars for the API container | `[]` |
+| `api.env.authProvider` | Identity provider: `keycloak` or `zitadel` | `"keycloak"` |
+| `api.env.keycloakRealm` | Keycloak realm name (sets `KEYCLOAK_REALM`) | `"geniro"` |
+| `api.env.keycloakClientId` | Keycloak client ID (sets `KEYCLOAK_CLIENT_ID`) | `"geniro"` |
+| `api.env.zitadelClientId` | Zitadel OIDC client ID (set after first boot) | `""` |
+| `web.image.tag` | Web UI image tag | `latest` |
+| `web.ingress.enabled` | Enable Web UI ingress | `false` |
+| `litellm.enabled` | Deploy LiteLLM proxy | `true` |
+| `litellm.config.model_list` | LLM model definitions (first-boot seed only) | 3 OpenRouter models |
+| `keycloak.enabled` | Deploy bundled Keycloak | `true` |
+| `keycloak.auth.adminUser` | Keycloak admin console username | `admin` |
+| `keycloak.auth.adminPassword` | Keycloak admin console password | `admin` |
+| `externalKeycloak.url` | URL of external Keycloak (when `keycloak.enabled=false`) | `""` |
+| `daytona.enabled` | Deploy Daytona sandbox runtime | `false` |
+| `postgresql.enabled` | Deploy bundled PostgreSQL (pgvector) | `true` |
+| `redis.enabled` | Deploy bundled Redis | `true` |
+| `qdrant.enabled` | Deploy bundled Qdrant | `true` |
+| `zitadel.enabled` | Deploy bundled Zitadel | `false` |
+| `zitadel.zitadel.masterkey` | 32-char encryption key for Zitadel | `""` |
+
+See [`values.yaml`](values.yaml) for the complete reference with all options and
+inline documentation.

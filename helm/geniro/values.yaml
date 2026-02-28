@@ -62,6 +62,9 @@ api:
   # Auth and service env vars
   env:
     authProvider: "keycloak"
+    # NOTE: keycloakUrl below is NOT used by templates. The Keycloak URL is resolved
+    # from externalKeycloak.url (when keycloak.enabled=false) or the internal
+    # service URL (when keycloak.enabled=true). See _helpers.tpl geniro.keycloakUrl.
     keycloakUrl: ""
     keycloakRealm: "geniro"
     keycloakClientId: "geniro"
@@ -143,6 +146,10 @@ litellm:
       proxy_logging: false
       success_logging: true
       drop_params: true
+    # model_list seeds LiteLLM's database on first startup (store_model_in_db: true).
+    # After first boot, manage models via the LiteLLM admin API
+    # (POST /model/new, Authorization: Bearer <litellmMasterKey>).
+    # To re-seed from these values, delete the litellm database and redeploy.
     model_list:
       - model_name: claude-sonnet-4-6
         litellm_params:
@@ -308,6 +315,8 @@ keycloak:
 
 externalKeycloak:
   url: ""
+  # NOTE: realm and clientId below are informational only (used in NOTES.txt output).
+  # The API reads its Keycloak config from api.env.keycloakRealm and api.env.keycloakClientId.
   realm: geniro
   clientId: geniro
 
@@ -318,6 +327,9 @@ externalKeycloak:
 # Enable with zitadel.enabled=true and set keycloak.enabled=false.
 zitadel:
   enabled: false
+  # UPGRADE NOTE: Zitadel generates a dynamic client ID after first boot.
+  # You must retrieve it and pass api.env.zitadelClientId explicitly on upgrades.
+  # Do not rely on --reuse-values alone since it skips new defaults.
   image:
     tag: v3.4.7   # Pin to v3.x; the chart defaults to v4.x
   # The subchart nests its runtime config under a "zitadel" key in its own values.
@@ -382,6 +394,10 @@ externalQdrant:
 # Secrets
 # -----------------------------------------------------------------------------
 secrets:
+  # If set, the chart uses this pre-existing Kubernetes Secret instead of creating one.
+  # The Secret must contain these keys: CREDENTIAL_ENCRYPTION_KEY, OPENROUTER_API_KEY,
+  # LITELLM_MASTER_KEY, POSTGRES_PASSWORD, LITELLM_DATABASE_URL.
+  # See README.md "Secrets Management" section for the full kubectl create command.
   existingSecret: ""
   credentialEncryptionKey: ""
   openrouterApiKey: ""

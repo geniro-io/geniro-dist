@@ -212,3 +212,19 @@ qdrant:
 #   env:
 #     authProvider: "zitadel"
 #     zitadelClientId: ""   # Set after Zitadel first boot
+
+# --- External Keycloak (instead of bundled) ---
+# To use an external Keycloak instance, disable the bundled one and point
+# externalKeycloak.url to your existing provider:
+#
+# keycloak:
+#   enabled: false
+#
+# externalKeycloak:
+#   url: "https://auth.example.com"
+#
+# api:
+#   env:
+#     authProvider: "keycloak"
+#     keycloakRealm: "my-realm"         # sets KEYCLOAK_REALM env var
+#     keycloakClientId: "geniro"        # sets KEYCLOAK_CLIENT_ID env var
