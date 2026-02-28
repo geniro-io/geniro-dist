@@ -1,8 +1,11 @@
 # =============================================================================
-# Geniro — Quick Start Example Values
+# Geniro — Example Values (Complete Reference)
 # =============================================================================
-# A working configuration with all services enabled and LLM models routed
+# A working configuration with core services enabled and LLM models routed
 # through OpenRouter. Replace placeholder keys with your own.
+#
+# Optional components (Daytona, Zitadel) are included below as commented
+# sections. Uncomment and configure as needed.
 #
 # Usage:
 #   helm install geniro ./geniro-dist/helm/geniro -f examples/quickstart-values.yaml
@@ -176,28 +179,48 @@ qdrant:
 # -----------------------------------------------------------------------------
 # Zitadel (alternative identity provider — disabled by default)
 # -----------------------------------------------------------------------------
-# To use Zitadel instead of Keycloak, uncomment the block below and set
-# keycloak.enabled=false. See examples/zitadel-values.yaml for a full example.
+# To use Zitadel instead of Keycloak:
+#   1. Uncomment the zitadel block below
+#   2. Set keycloak.enabled: false
+#   3. Set api.env.authProvider: "zitadel"
+#
+# IMPORTANT: After first install, Zitadel generates OIDC client IDs dynamically.
+# You must retrieve the client ID and upgrade the release:
+#   helm upgrade geniro ./helm/geniro \
+#     -f examples/quickstart-values.yaml \
+#     --set api.env.zitadelClientId=<CLIENT_ID>
+#
+# Zitadel v3.4.7 is pinned because the Helm chart defaults to v4.x.
+# v3.x still includes Login v1 built-in (no separate login container needed).
 #
 # zitadel:
 #   enabled: true
 #   image:
 #     tag: v3.4.7
 #   zitadel:
+#     # Exactly 32 characters. Generate with: openssl rand -base64 24 | head -c 32
 #     masterkey: "REPLACE_ME_EXACTLY_32_CHARACTERS"
 #     configmapConfig:
-#       ExternalDomain: "auth.geniro.example.com"
 #       ExternalSecure: true
+#       ExternalDomain: "auth.geniro.example.com"
 #       ExternalPort: 443
 #       TLS:
-#         Enabled: false
+#         Enabled: false   # TLS is terminated at the ingress/load balancer
 #       Database:
 #         Postgres:
-#           Host: "geniro-postgresql"   # Adjust to your release name
+#           Host: "geniro-postgresql"   # Adjust if using fullnameOverride
+#           Port: 5432
+#           Database: zitadel
 #           User:
+#             Username: postgres
 #             Password: "change-me-in-production"
+#             SSL:
+#               Mode: disable
 #           Admin:
+#             Username: postgres
 #             Password: "change-me-in-production"
+#             SSL:
+#               Mode: disable
 #       FirstInstance:
 #         Org:
 #           Name: "Geniro"
@@ -206,6 +229,12 @@ qdrant:
 #             # REQUIRED: Set a strong password at install time
 #             Password: ""
 #             PasswordChangeRequired: true
+#           Machine:
+#             Machine:
+#               Username: "geniro-init-sa"
+#               Name: "Geniro Init Service Account"
+#             Pat:
+#               ExpirationDate: "2030-01-01T00:00:00Z"
 # keycloak:
 #   enabled: false
 # api:
@@ -228,3 +257,71 @@ qdrant:
 #     authProvider: "keycloak"
 #     keycloakRealm: "my-realm"         # sets KEYCLOAK_REALM env var
 #     keycloakClientId: "geniro"        # sets KEYCLOAK_CLIENT_ID env var
+
+# -----------------------------------------------------------------------------
+# Daytona (Sandbox Runtime — disabled by default)
+# -----------------------------------------------------------------------------
+# Provides isolated sandbox environments for agent code execution using Daytona.
+# Components: daytona-api, daytona-runner (privileged), daytona-proxy (nginx)
+#
+# SECURITY WARNING: daytona-runner requires privileged container security
+# context for nested container execution (Docker-in-Docker). Run on dedicated
+# node pools only. Do NOT run privileged containers on shared or multi-tenant
+# nodes.
+#
+# Generate required secrets before enabling:
+#   ADMIN_KEY=$(openssl rand -hex 32)
+#   RUNNER_KEY=$(openssl rand -hex 32)
+#   ENC_KEY=$(openssl rand -hex 16)
+#   ENC_SALT=$(openssl rand -hex 16)
+#
+# daytona:
+#   enabled: true
+#   api:
+#     image:
+#       repository: daytonaio/daytona-api
+#       tag: v0.145.0
+#     port: 3986
+#     resources:
+#       requests:
+#         cpu: 250m
+#         memory: 512Mi
+#       limits:
+#         cpu: 1000m
+#         memory: 1Gi
+#     env:
+#       adminApiKey: ""       # REQUIRED: generate with: openssl rand -hex 32
+#       runnerApiKey: ""      # REQUIRED: shared by runner + proxy
+#       encryptionKey: ""     # REQUIRED: generate with: openssl rand -hex 16
+#       encryptionSalt: ""    # REQUIRED: generate with: openssl rand -hex 16
+#       defaultSnapshot: "daytonaio/sandbox:0.5.0-slim"
+#       proxyDomain: "sandboxes.geniro.example.com"
+#       proxyProtocol: "https"
+#   runner:
+#     image:
+#       repository: daytonaio/daytona-runner
+#       tag: v0.145.0
+#     port: 8080
+#     resources:
+#       requests:
+#         cpu: 500m
+#         memory: 1Gi
+#       limits:
+#         cpu: 2000m
+#         memory: 4Gi
+#     securityContext:
+#       privileged: true   # Required for nested container execution
+#   proxy:
+#     image:
+#       repository: nginx
+#       tag: alpine
+#     port: 80
+#     resources:
+#       requests:
+#         cpu: 50m
+#         memory: 32Mi
+#       limits:
+#         cpu: 100m
+#         memory: 64Mi
+# api:
+#   mountDockerSocket: false   # Disable Docker socket mount when using Daytona

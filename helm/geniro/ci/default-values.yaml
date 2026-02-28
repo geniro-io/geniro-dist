@@ -1,8 +1,0 @@
-# CI fixture: default install path (zitadel disabled, keycloak enabled)
-# Exercises the else branches in geniro.zitadelUrl / geniro.zitadelIssuer helpers
-secrets:
-  credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-  openrouterApiKey: "sk-or-test"
-  litellmMasterKey: "test-master"
-# zitadel omitted — stays at default (enabled: false)
-# keycloak.enabled stays true — the normal default path
