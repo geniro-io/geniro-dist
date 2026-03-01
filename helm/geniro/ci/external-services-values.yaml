@@ -1,0 +1,54 @@
+# CI test: validate template rendering with all external services (BYO mode)
+secrets:
+  credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  openrouterApiKey: "sk-or-test"
+  litellmMasterKey: "test-master"
+
+api:
+  ingress:
+    enabled: false
+
+web:
+  ingress:
+    enabled: false
+
+litellm:
+  enabled: false
+externalLitellm:
+  url: "http://litellm.example.com:4000"
+
+postgresql:
+  enabled: false
+externalPostgresql:
+  host: "postgres.example.com"
+  port: 5432
+  username: "geniro"
+  password: "test-password"
+  database: "geniro"
+
+redis:
+  enabled: false
+externalRedis:
+  host: "redis.example.com"
+  port: 6379
+  password: "test-redis-password"
+
+qdrant:
+  enabled: false
+externalQdrant:
+  host: "qdrant.example.com"
+  port: 6333
+  apiKey: "test-qdrant-key"
+
+keycloak:
+  enabled: false
+externalKeycloak:
+  url: "https://auth.example.com"
+  realm: geniro
+  clientId: geniro
+
+zitadel:
+  enabled: false
+
+daytona:
+  enabled: false

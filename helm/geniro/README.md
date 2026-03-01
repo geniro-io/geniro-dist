@@ -350,6 +350,64 @@ and uses the named Secret for all secret references.
 
 Disable any bundled dependency and point to your own managed instance.
 
+### Bring Your Own Services (Minimal Install)
+
+To deploy only the Geniro application (API + Web) and connect to your existing
+cluster infrastructure, disable all bundled dependencies:
+
+```yaml
+# my-values.yaml — Geniro with all external services
+
+secrets:
+  credentialEncryptionKey: "<64-char-hex>"
+  openrouterApiKey: "sk-or-v1-..."
+  litellmMasterKey: "my-strong-key"
+
+postgresql:
+  enabled: false
+externalPostgresql:
+  host: "postgres.example.com"
+  port: 5432
+  username: "geniro"
+  password: "your-password"
+  database: "geniro"
+  ssl: true
+
+redis:
+  enabled: false
+externalRedis:
+  host: "redis.example.com"
+  port: 6379
+  password: "your-auth-token"   # Optional
+
+qdrant:
+  enabled: false
+externalQdrant:
+  host: "qdrant.example.com"
+  port: 6333
+  apiKey: "your-api-key"        # Optional — stored as a Secret
+
+keycloak:
+  enabled: false
+externalKeycloak:
+  url: "https://auth.example.com"
+
+litellm:
+  enabled: false
+externalLitellm:
+  url: "http://my-litellm:4000"
+
+daytona:
+  enabled: false
+```
+
+When using external PostgreSQL, create the required databases before installing:
+
+```sql
+CREATE DATABASE geniro;
+CREATE DATABASE litellm;    -- if litellm.enabled=true
+```
+
 ### External PostgreSQL
 
 ```yaml
@@ -378,7 +436,10 @@ redis:
 externalRedis:
   host: "my-redis.cache.amazonaws.com"
   port: 6379
+  password: "your-auth-token"   # Optional — ElastiCache auth token, Redis Cloud password, etc.
 ```
+
+When `password` is set, the Redis URL is constructed as `redis://:password@host:port`.
 
 ### External Keycloak
 
@@ -409,10 +470,27 @@ qdrant:
   enabled: false
 
 externalQdrant:
-  host: "my-qdrant.example.com"
+  host: "xyz.us-east-1-0.aws.cloud.qdrant.io"
   port: 6333
-  apiKey: "your-qdrant-api-key"
+  apiKey: "your-qdrant-cloud-api-key"   # Stored as a Kubernetes Secret
 ```
+
+When `apiKey` is set, the chart injects it as a Secret-sourced `QDRANT_API_KEY` env var.
+Leave empty for unauthenticated Qdrant instances.
+
+### External LiteLLM
+
+```yaml
+litellm:
+  enabled: false
+
+externalLitellm:
+  url: "http://my-litellm.example.com:4000"
+```
+
+The chart sets `LLM_BASE_URL` to this URL. The API authenticates with `secrets.litellmMasterKey`.
+If both `litellm.enabled=false` and `externalLitellm.url` is empty, `LLM_BASE_URL` is omitted
+and the API runs without LLM integration.
 
 ---
 
@@ -767,6 +845,8 @@ helm template geniro ./helm/geniro \
 | `keycloak.auth.adminUser` | Keycloak admin console username | `admin` |
 | `keycloak.auth.adminPassword` | Keycloak admin console password | `admin` |
 | `externalKeycloak.url` | URL of external Keycloak (when `keycloak.enabled=false`) | `""` |
+| `externalRedis.password` | Auth token/password for external Redis | `""` |
+| `externalLitellm.url` | URL of external LiteLLM (when `litellm.enabled=false`) | `""` |
 | `daytona.enabled` | Deploy Daytona sandbox runtime | `false` |
 | `postgresql.enabled` | Deploy bundled PostgreSQL (pgvector) | `true` |
 | `redis.enabled` | Deploy bundled Redis | `true` |

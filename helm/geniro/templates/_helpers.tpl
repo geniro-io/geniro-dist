@@ -109,7 +109,7 @@ Resolve LiteLLM base URL.
 {{- if .Values.litellm.enabled }}
 {{- printf "http://%s-litellm:%v" (include "geniro.fullname" .) .Values.litellm.port }}
 {{- else }}
-{{- "" }}
+{{- .Values.externalLitellm.url }}
 {{- end }}
 {{- end }}
 
@@ -143,5 +143,24 @@ Secret name — existing or generated.
 {{- .Values.secrets.existingSecret }}
 {{- else }}
 {{- printf "%s-secrets" (include "geniro.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
+Validate external service configuration.
+Called from configmap.yaml to surface errors at render time.
+*/}}
+{{- define "geniro.validateExternalServices" -}}
+{{- if and (not .Values.postgresql.enabled) (not .Values.externalPostgresql.host) }}
+{{- fail "externalPostgresql.host is required when postgresql.enabled=false" }}
+{{- end }}
+{{- if and (not .Values.redis.enabled) (not .Values.externalRedis.host) }}
+{{- fail "externalRedis.host is required when redis.enabled=false" }}
+{{- end }}
+{{- if and (not .Values.qdrant.enabled) (not .Values.externalQdrant.host) }}
+{{- fail "externalQdrant.host is required when qdrant.enabled=false" }}
+{{- end }}
+{{- if and (not .Values.keycloak.enabled) (not .Values.zitadel.enabled) (not .Values.externalKeycloak.url) (not .Values.externalZitadel.url) }}
+{{- fail "An auth provider is required. Set keycloak.enabled=true, zitadel.enabled=true, externalKeycloak.url, or externalZitadel.url" }}
 {{- end }}
 {{- end }}

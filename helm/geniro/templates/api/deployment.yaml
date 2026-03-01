@@ -89,6 +89,13 @@ spec:
                   name: {{ include "geniro.secretName" . }}
                   key: DAYTONA_ADMIN_API_KEY
             {{- end }}
+            {{- if and (not .Values.qdrant.enabled) .Values.externalQdrant.apiKey }}
+            - name: QDRANT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "geniro.secretName" . }}
+                  key: QDRANT_API_KEY
+            {{- end }}
             {{- with .Values.api.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}

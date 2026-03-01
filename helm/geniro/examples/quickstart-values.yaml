@@ -120,6 +120,12 @@ litellm:
           model: openrouter/deepseek/deepseek-chat
           api_key: os.environ/OPENROUTER_API_KEY
 
+# To use an external LiteLLM instance instead of the bundled one:
+# litellm:
+#   enabled: false
+# externalLitellm:
+#   url: "http://my-litellm.example.com:4000"
+
 # -----------------------------------------------------------------------------
 # Keycloak
 # -----------------------------------------------------------------------------
@@ -169,12 +175,21 @@ redis:
 # externalRedis:
 #   host: "your-redis.cache.amazonaws.com"
 #   port: 6379
+#   password: "your-auth-token"   # Optional — ElastiCache auth token, etc.
 
 # -----------------------------------------------------------------------------
 # Qdrant — vector database for embeddings
 # -----------------------------------------------------------------------------
 qdrant:
   enabled: true
+
+# To use external Qdrant (e.g., Qdrant Cloud), set:
+# qdrant:
+#   enabled: false
+# externalQdrant:
+#   host: "xyz.us-east-1-0.aws.cloud.qdrant.io"
+#   port: 6333
+#   apiKey: "your-qdrant-cloud-api-key"   # injected as QDRANT_API_KEY secret
 
 # -----------------------------------------------------------------------------
 # Zitadel (alternative identity provider — disabled by default)

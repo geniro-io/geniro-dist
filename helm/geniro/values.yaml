@@ -167,6 +167,10 @@ litellm:
           api_key: os.environ/OPENROUTER_API_KEY
           base_model: text-embedding-3-small
 
+# External LiteLLM — use when litellm.enabled=false
+externalLitellm:
+  url: ""   # e.g., http://my-litellm.example.com:4000
+
 # -----------------------------------------------------------------------------
 # Daytona (Sandbox Runtime) — disabled by default
 # -----------------------------------------------------------------------------
@@ -269,6 +273,7 @@ redis:
 externalRedis:
   host: ""
   port: 6379
+  password: ""   # Optional. If set, added to the Redis URL as redis://:password@host:port
 
 # -----------------------------------------------------------------------------
 # Keycloak (official image — quay.io/keycloak/keycloak)
