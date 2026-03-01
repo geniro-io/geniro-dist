@@ -101,6 +101,9 @@ spec:
             {{- end }}
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
+          # TODO: Upgrade to httpGet probes (e.g., path: /api/health) when a health
+          # endpoint is confirmed in the NestJS API. TCP probes only verify the port
+          # is open, not that the application is fully ready.
           livenessProbe:
             tcpSocket:
               port: http

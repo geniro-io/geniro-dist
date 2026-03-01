@@ -45,7 +45,6 @@ keycloak:
 externalKeycloak:
   url: "https://auth.example.com"
   realm: geniro
-  clientId: geniro
 
 zitadel:
   enabled: false

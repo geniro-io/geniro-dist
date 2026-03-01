@@ -16,6 +16,10 @@ spec:
       labels:
         {{- include "geniro.componentSelectorLabels" (dict "component" "daytona-runner" "context" .) | nindent 8 }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: daytona-runner
           image: "{{ .Values.daytona.runner.image.repository }}:{{ .Values.daytona.runner.image.tag }}"

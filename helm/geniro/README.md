@@ -23,8 +23,7 @@ Redis, and Qdrant as bundled dependencies.
 
 PostgreSQL serves as the shared database backend for the API (geniro), Keycloak,
 LiteLLM, and optionally Zitadel and Daytona. The init script automatically creates
-all required databases: `geniro`, `keycloak`, `litellm`, `infisical` (reserved for
-future secrets management integration), `daytona`, and `zitadel`.
+all required databases: `geniro`, `keycloak`, `litellm`, `daytona`, and `zitadel`.
 
 ---
 
@@ -330,9 +329,27 @@ kubectl create secret generic geniro-secrets -n geniro \
   --from-literal=CREDENTIAL_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
   --from-literal=OPENROUTER_API_KEY="sk-or-v1-YOUR_KEY" \
   --from-literal=LITELLM_MASTER_KEY="my-strong-key" \
+  --from-literal=LITELLM_SALT_KEY="your-salt-key" \
   --from-literal=POSTGRES_PASSWORD="your-db-password" \
-  --from-literal=LITELLM_DATABASE_URL="postgresql://postgres:your-db-password@geniro-postgresql:5432/litellm"
+  --from-literal=LITELLM_DATABASE_URL="postgresql://postgres:your-db-password@geniro-postgresql:5432/litellm" \
+  --from-literal=KEYCLOAK_ADMIN_PASSWORD="your-keycloak-admin-password"
 ```
+
+**Conditional keys** (include when the corresponding feature is enabled):
+
+| Key | Required When |
+|---|---|
+| `LITELLM_DATABASE_URL` | `litellm.enabled=true` |
+| `KEYCLOAK_ADMIN_PASSWORD` | `keycloak.enabled=true` |
+| `DAYTONA_ADMIN_API_KEY` | `daytona.enabled=true` |
+| `DAYTONA_RUNNER_API_KEY` | `daytona.enabled=true` |
+| `DAYTONA_ENCRYPTION_KEY` | `daytona.enabled=true` |
+| `DAYTONA_ENCRYPTION_SALT` | `daytona.enabled=true` |
+| `QDRANT_API_KEY` | `qdrant.enabled=false` and `externalQdrant.apiKey` is set |
+| `GITHUB_APP_ID` | `secrets.githubApp.id` is set |
+| `GITHUB_APP_PRIVATE_KEY` | `secrets.githubApp.id` is set |
+| `GITHUB_APP_CLIENT_ID` | `secrets.githubApp.id` is set |
+| `GITHUB_APP_CLIENT_SECRET` | `secrets.githubApp.id` is set |
 
 Then reference it in your values:
 
@@ -665,6 +682,13 @@ api:
 > security context for nested container execution (Docker-in-Docker). This grants
 > full host kernel access. Run Daytona runner pods on dedicated, isolated node
 > pools only.
+
+> **Security Note:** The Daytona runner API key (`daytona.api.env.runnerApiKey`)
+> is embedded in the nginx proxy ConfigMap as an `Authorization` header value.
+> ConfigMaps are stored unencrypted in etcd by default. This is an nginx
+> architectural limitation -- nginx cannot natively reference Kubernetes Secrets
+> for header values. Enable etcd encryption at rest if your security policy
+> requires it.
 
 See [`examples/daytona-values.yaml`](examples/daytona-values.yaml) for a complete
 configuration.

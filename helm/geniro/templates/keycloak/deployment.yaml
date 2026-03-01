@@ -44,11 +44,14 @@ spec:
             - name: KEYCLOAK_ADMIN
               value: {{ .Values.keycloak.auth.adminUser | quote }}
             - name: KEYCLOAK_ADMIN_PASSWORD
-              value: {{ .Values.keycloak.auth.adminPassword | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "geniro.secretName" . }}
+                  key: KEYCLOAK_ADMIN_PASSWORD
             - name: KC_DB
               value: "postgres"
             - name: KC_DB_URL
-              value: {{ printf "jdbc:postgresql://%s/keycloak" (include "geniro.postgresHost" .) | quote }}
+              value: {{ printf "jdbc:postgresql://%s:%s/keycloak" (include "geniro.postgresHost" .) (ternary "5432" (.Values.externalPostgresql.port | toString) .Values.postgresql.enabled) | quote }}
             - name: KC_DB_USERNAME
               value: {{ if .Values.postgresql.enabled }}{{ .Values.postgresql.auth.username | default "postgres" | quote }}{{ else }}{{ .Values.externalPostgresql.username | default "postgres" | quote }}{{ end }}
             - name: KC_DB_PASSWORD

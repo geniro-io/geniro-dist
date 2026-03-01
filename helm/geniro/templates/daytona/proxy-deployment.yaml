@@ -6,8 +6,6 @@ metadata:
   labels:
     {{- include "geniro.labels" . | nindent 4 }}
     app.kubernetes.io/component: daytona-proxy
-  annotations:
-    checksum/config: {{ include (print $.Template.BasePath "/daytona/proxy-configmap.yaml") . | sha256sum }}
 spec:
   replicas: 1
   selector:
@@ -20,9 +18,14 @@ spec:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/daytona/proxy-configmap.yaml") . | sha256sum }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: nginx
           image: "{{ .Values.daytona.proxy.image.repository }}:{{ .Values.daytona.proxy.image.tag }}"
+          imagePullPolicy: {{ .Values.daytona.proxy.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: {{ .Values.daytona.proxy.port }}
               name: http

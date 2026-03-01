@@ -1,0 +1,114 @@
+# =============================================================================
+# Geniro — Zitadel Identity Provider Example
+# =============================================================================
+# Deploys Geniro with Zitadel as the OIDC identity provider instead of Keycloak.
+#
+# Usage:
+#   helm install geniro ./helm/geniro \
+#     -f examples/zitadel-values.yaml \
+#     --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
+#     --set zitadel.zitadel.masterkey="YourExactly32CharacterMasterkey!" \
+#     -n geniro --create-namespace
+#
+# After first boot, Zitadel generates OIDC client IDs dynamically.
+# Retrieve the client ID and upgrade the release:
+#   helm upgrade geniro ./helm/geniro \
+#     -f examples/zitadel-values.yaml \
+#     --set api.env.zitadelClientId=<CLIENT_ID> \
+#     -n geniro
+
+# -----------------------------------------------------------------------------
+# Secrets (REQUIRED -- replace placeholders before installing)
+# -----------------------------------------------------------------------------
+secrets:
+  credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
+  openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
+  litellmMasterKey: "sk-litellm-master-key"
+  litellmSaltKey: "salt"  # Change in production
+
+# -----------------------------------------------------------------------------
+# API — use Zitadel as auth provider
+# -----------------------------------------------------------------------------
+api:
+  env:
+    authProvider: "zitadel"
+    # Set after Zitadel first boot (dynamic OIDC client ID)
+    zitadelClientId: ""
+
+# -----------------------------------------------------------------------------
+# Keycloak — disabled (replaced by Zitadel)
+# -----------------------------------------------------------------------------
+keycloak:
+  enabled: false
+
+# -----------------------------------------------------------------------------
+# Zitadel (identity provider)
+# -----------------------------------------------------------------------------
+# Pin to v3.x which includes Login v1 built-in (no separate login container).
+# The Helm chart defaults to v4.x.
+zitadel:
+  enabled: true
+  image:
+    tag: v3.4.7
+  zitadel:
+    # Exactly 32 characters. Generate with: openssl rand -base64 24 | head -c 32
+    masterkey: "REPLACE_ME_EXACTLY_32_CHARACTERS"
+    configmapConfig:
+      ExternalSecure: false
+      ExternalDomain: "zitadel.geniro.local"
+      ExternalPort: 80
+      TLS:
+        Enabled: false
+      Database:
+        Postgres:
+          Host: "geniro-postgresql"   # Adjust if using fullnameOverride
+          Port: 5432
+          Database: zitadel
+          User:
+            Username: postgres
+            Password: "REPLACE_ME_ZITADEL_DB_PASSWORD"   # Must match postgresql.auth.postgresPassword
+            SSL:
+              Mode: disable
+          Admin:
+            Username: postgres
+            Password: "REPLACE_ME_ZITADEL_DB_PASSWORD"   # Must match postgresql.auth.postgresPassword
+            SSL:
+              Mode: disable
+      FirstInstance:
+        Org:
+          Name: "Geniro"
+          Human:
+            Username: "zitadel-admin@geniro.localhost"
+            # REQUIRED: Set a strong password at install time
+            Password: "REPLACE_ME_ADMIN_PASSWORD"
+            PasswordChangeRequired: true
+          Machine:
+            Machine:
+              Username: "geniro-init-sa"
+              Name: "Geniro Init Service Account"
+            Pat:
+              ExpirationDate: "2030-01-01T00:00:00Z"
+
+# -----------------------------------------------------------------------------
+# LiteLLM
+# -----------------------------------------------------------------------------
+litellm:
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# PostgreSQL — bundled (default)
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# Redis — bundled (default)
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# Qdrant — bundled (default)
+# -----------------------------------------------------------------------------
+qdrant:
+  enabled: true

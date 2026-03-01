@@ -18,13 +18,13 @@ kubeVersion: ">=1.27.0-0"
 
 dependencies:
   - name: postgresql
-    version: ">=15.0.0"
+    version: "18.5.1"
     repository: https://charts.bitnami.com/bitnami
     condition: postgresql.enabled
     alias: postgresql
 
   - name: redis
-    version: ">=19.0.0"
+    version: "25.3.2"
     repository: https://charts.bitnami.com/bitnami
     condition: redis.enabled
     alias: redis
@@ -33,13 +33,13 @@ dependencies:
   # quay.io/keycloak/keycloak image. See templates/keycloak/ for the templates.
 
   - name: qdrant
-    version: ">=1.0.0"
+    version: "1.17.0"
     repository: https://qdrant.github.io/qdrant-helm
     condition: qdrant.enabled
     alias: qdrant
 
   - name: zitadel
-    version: ">=8.0.0"
+    version: "9.24.0"
     repository: https://charts.zitadel.com
     condition: zitadel.enabled
     alias: zitadel

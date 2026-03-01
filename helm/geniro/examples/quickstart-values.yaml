@@ -23,6 +23,7 @@ secrets:
 
   # LiteLLM admin key — used to manage models via the LiteLLM admin UI
   litellmMasterKey: "sk-litellm-master-key"
+  litellmSaltKey: "salt"  # Change in production
 
   # GitHub App (optional — needed for GitHub integration)
   # githubApp:

@@ -1,0 +1,127 @@
+# =============================================================================
+# Geniro — Daytona Sandbox Runtime Example
+# =============================================================================
+# Deploys Geniro with Daytona sandbox runtime enabled for isolated agent
+# code execution (instead of mounting the host Docker socket).
+#
+# Usage:
+#   # Generate required secrets first:
+#   ADMIN_KEY=$(openssl rand -hex 32)
+#   RUNNER_KEY=$(openssl rand -hex 32)
+#   ENC_KEY=$(openssl rand -hex 16)
+#   ENC_SALT=$(openssl rand -hex 16)
+#
+#   helm install geniro ./helm/geniro \
+#     -f examples/daytona-values.yaml \
+#     --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
+#     --set daytona.api.env.adminApiKey=$ADMIN_KEY \
+#     --set daytona.api.env.runnerApiKey=$RUNNER_KEY \
+#     --set daytona.api.env.encryptionKey=$ENC_KEY \
+#     --set daytona.api.env.encryptionSalt=$ENC_SALT \
+#     -n geniro --create-namespace
+
+# -----------------------------------------------------------------------------
+# Secrets (REQUIRED -- replace placeholders before installing)
+# -----------------------------------------------------------------------------
+secrets:
+  credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
+  openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
+  litellmMasterKey: "sk-litellm-master-key"
+  litellmSaltKey: "salt"  # Change in production
+
+# -----------------------------------------------------------------------------
+# API — Docker socket is disabled when using Daytona
+# -----------------------------------------------------------------------------
+api:
+  mountDockerSocket: false
+
+# -----------------------------------------------------------------------------
+# Daytona (Sandbox Runtime)
+# -----------------------------------------------------------------------------
+# SECURITY WARNING: The Daytona runner pod requires privileged: true for
+# nested container execution (Docker-in-Docker). This grants full host kernel
+# access. Run Daytona runner pods on dedicated, isolated node pools only.
+daytona:
+  enabled: true
+  api:
+    image:
+      repository: daytonaio/daytona-api
+      tag: v0.145.0
+    port: 3986
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    env:
+      # REQUIRED: generate unique random values for each deployment.
+      #   openssl rand -hex 32  (for adminApiKey and runnerApiKey)
+      #   openssl rand -hex 16  (for encryptionKey and encryptionSalt)
+      adminApiKey: ""
+      runnerApiKey: ""
+      encryptionKey: ""
+      encryptionSalt: ""
+      defaultSnapshot: "daytonaio/sandbox:0.5.0-slim"
+      proxyDomain: "sandboxes.geniro.example.com"
+      proxyProtocol: "https"
+  runner:
+    image:
+      repository: daytonaio/daytona-runner
+      tag: v0.145.0
+    port: 8080
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    securityContext:
+      privileged: true   # Required for nested container execution
+  proxy:
+    image:
+      repository: nginx
+      tag: alpine
+    port: 80
+    resources:
+      requests:
+        cpu: 50m
+        memory: 32Mi
+      limits:
+        cpu: 100m
+        memory: 64Mi
+
+# -----------------------------------------------------------------------------
+# Keycloak — bundled (default)
+# -----------------------------------------------------------------------------
+keycloak:
+  enabled: true
+  auth:
+    adminUser: admin
+    adminPassword: admin   # REPLACE in production!
+
+# -----------------------------------------------------------------------------
+# LiteLLM
+# -----------------------------------------------------------------------------
+litellm:
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# PostgreSQL — bundled (default)
+# -----------------------------------------------------------------------------
+postgresql:
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# Redis — bundled (default)
+# -----------------------------------------------------------------------------
+redis:
+  enabled: true
+
+# -----------------------------------------------------------------------------
+# Qdrant — bundled (default)
+# -----------------------------------------------------------------------------
+qdrant:
+  enabled: true

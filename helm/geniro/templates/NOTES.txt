@@ -61,9 +61,10 @@ After the Zitadel pod is Ready, complete setup:
    geniro-web/src/config/production.ts. If you are using custom domains, you must
    edit production.ts and rebuild the web image before deploying.
 
-3. Docker Socket: The API mounts the host Docker socket for tool execution containers.
-   If your cluster does not allow this, set api.mountDockerSocket=false and configure
-   Daytona as the runtime instead (daytona.enabled=true).
+3. Docker Socket: By default, the API does NOT mount the host Docker socket
+   (api.mountDockerSocket=false). To enable Docker-based tool execution, set
+   api.mountDockerSocket=true. Alternatively, deploy the Daytona sandbox runtime
+   (daytona.enabled=true) for isolated container execution without a host socket.
 
 4. Ingress Controller: If you enabled ingress, ensure an ingress controller
    (e.g., ingress-nginx) is installed in your cluster.
