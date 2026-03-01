@@ -14,7 +14,7 @@ Redis, and Qdrant as bundled dependencies.
 | **API** (NestJS backend) | `razumru/geniro-api` | 5000 | Always enabled |
 | **Web** (React/Vite frontend) | `razumru/geniro-web` | 4173 | Always enabled |
 | **LiteLLM** (LLM proxy) | `ghcr.io/berriai/litellm` | 4000 | Enabled by default |
-| **Keycloak** (identity provider) | `keycloak/keycloak` | 8080 | Enabled by default |
+| **Keycloak** (identity provider) | `quay.io/keycloak/keycloak` | 8080 | Enabled by default |
 | **PostgreSQL** (pgvector) | `pgvector/pgvector:pg17` | 5432 | Subchart, enabled by default |
 | **Redis** | Bitnami default | 6379 | Subchart, enabled by default |
 | **Qdrant** (vector database) | Official | 6333 | Subchart, enabled by default |
@@ -22,8 +22,9 @@ Redis, and Qdrant as bundled dependencies.
 | **Daytona** (sandbox runtime) | `daytonaio/daytona-*` | 3986 | Disabled by default |
 
 PostgreSQL serves as the shared database backend for the API (geniro), Keycloak,
-LiteLLM, and optionally Zitadel and Daytona. The init script automatically creates
-all required databases: `geniro`, `keycloak`, `litellm`, `daytona`, and `zitadel`.
+LiteLLM, and optionally Zitadel and Daytona. The init script conditionally creates
+databases based on which components are enabled: `geniro` (always), plus `keycloak`,
+`litellm`, `daytona`, and `zitadel` only when the corresponding component is enabled.
 
 ---
 
@@ -556,15 +557,16 @@ redis:
 ## Identity Provider: Keycloak (Default)
 
 Keycloak is deployed as an in-chart template (not a subchart) using the official
-`keycloak/keycloak` image. On first startup it imports the `geniro` realm from a
+`quay.io/keycloak/keycloak` image. On first startup it imports the `geniro` realm from a
 ConfigMap-mounted JSON file.
 
 The default realm includes:
 - A `geniro` OIDC client
 - A pre-configured admin user (`admin` / `Admin123!`, temporary password)
 
-Keycloak runs in dev mode (`start-dev --import-realm`). For production, consider
-using an external Keycloak instance or customizing the deployment.
+Keycloak runs in production mode (`start --import-realm`) with `KC_HTTP_ENABLED=true`
+and `KC_PROXY_HEADERS=xforwarded` for reverse-proxy deployments. For production, consider
+using an external Keycloak instance or further customizing the deployment.
 
 To verify realm import:
 
@@ -759,9 +761,9 @@ kubectl logs -n geniro -l app.kubernetes.io/component=litellm --tail=100
 
 ### Database Not Ready
 
-The API deployment does not include init-containers for database readiness. If the
-API starts before PostgreSQL is ready, it will crash and restart. Kubernetes will
-retry automatically. If it persists beyond a few restarts:
+The API, LiteLLM, and Keycloak deployments include init-containers that wait up to
+120 seconds for PostgreSQL (and Redis for the API). If pods are stuck in `Init`
+state, check that the database pods are running:
 
 ```bash
 # Check PostgreSQL pod status
@@ -773,7 +775,7 @@ kubectl logs -n geniro -l app.kubernetes.io/component=postgresql --tail=50
 
 ### Keycloak Realm Not Imported
 
-The Keycloak deployment uses `start-dev --import-realm` and mounts the realm JSON
+The Keycloak deployment uses `start --import-realm` and mounts the realm JSON
 from a ConfigMap at `/opt/keycloak/data/import`. Verify:
 
 ```bash

@@ -15,6 +15,9 @@ spec:
     metadata:
       labels:
         {{- include "geniro.componentSelectorLabels" (dict "component" "litellm" "context" .) | nindent 8 }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/litellm/configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -24,6 +27,10 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ['sh', '-c', 'timeout 120 sh -c "until nc -z {{ include "geniro.postgresHost" . }} 5432; do echo waiting for postgres...; sleep 2; done"']
       containers:
         - name: litellm
           image: "{{ .Values.litellm.image.repository }}:{{ .Values.litellm.image.tag }}"
@@ -68,14 +75,18 @@ spec:
             httpGet:
               path: /health/liveliness
               port: http
-            initialDelaySeconds: 15
+            initialDelaySeconds: 60
             periodSeconds: 20
+            failureThreshold: 5
+            timeoutSeconds: 5
           readinessProbe:
             httpGet:
               path: /health/readiness
               port: http
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 5
           resources:
             {{- toYaml .Values.litellm.resources | nindent 12 }}
       volumes:

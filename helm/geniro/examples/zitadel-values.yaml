@@ -24,7 +24,7 @@ secrets:
   credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
   openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
   litellmMasterKey: "sk-litellm-master-key"
-  litellmSaltKey: "salt"  # Change in production
+  litellmSaltKey: "REPLACE_ME_SALT_KEY"
 
 # -----------------------------------------------------------------------------
 # API — use Zitadel as auth provider

@@ -20,10 +20,18 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.daytona.api.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: daytona-api
           image: "{{ .Values.daytona.api.image.repository }}:{{ .Values.daytona.api.image.tag }}"
           imagePullPolicy: {{ .Values.daytona.api.image.pullPolicy }}
+          {{- with .Values.daytona.api.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.daytona.api.port }}
               name: http
@@ -47,6 +55,13 @@ spec:
               value: {{ include "geniro.redisHost" . | quote }}
             - name: REDIS_PORT
               value: {{ if .Values.redis.enabled }}"6379"{{ else }}{{ .Values.externalRedis.port | default 6379 | quote }}{{ end }}
+            {{- if and (not .Values.redis.enabled) .Values.externalRedis.password }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "geniro.secretName" . }}
+                  key: REDIS_PASSWORD
+            {{- end }}
             - name: ENCRYPTION_KEY
               valueFrom:
                 secretKeyRef:
@@ -103,11 +118,27 @@ spec:
               port: http
             initialDelaySeconds: 30
             periodSeconds: 10
+            failureThreshold: 6
+            timeoutSeconds: 5
           readinessProbe:
             tcpSocket:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
+            failureThreshold: 6
+            timeoutSeconds: 5
           resources:
             {{- toYaml .Values.daytona.api.resources | nindent 12 }}
+      {{- with .Values.daytona.api.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.daytona.api.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.daytona.api.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 {{- end }}

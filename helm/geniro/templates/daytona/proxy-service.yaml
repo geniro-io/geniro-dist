@@ -1,0 +1,18 @@
+{{- if .Values.daytona.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "geniro.fullname" . }}-daytona-proxy
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: daytona-proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.daytona.proxy.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "geniro.componentSelectorLabels" (dict "component" "daytona-proxy" "context" .) | nindent 4 }}
+{{- end }}

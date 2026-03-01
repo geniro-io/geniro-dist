@@ -1,0 +1,79 @@
+# CI test: validate template rendering with Zitadel instead of Keycloak
+secrets:
+  credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  openrouterApiKey: "sk-or-test"
+  litellmMasterKey: "test-master"
+  litellmSaltKey: "test-salt-key-for-ci-validation"
+
+api:
+  env:
+    authProvider: "zitadel"
+    zitadelClientId: "test-client-id"
+  ingress:
+    enabled: false
+
+web:
+  ingress:
+    enabled: false
+
+keycloak:
+  enabled: false
+
+externalKeycloak:
+  url: ""
+
+zitadel:
+  enabled: true
+  image:
+    tag: v3.4.7
+  zitadel:
+    masterkey: "MasterkeyNeedsToHave32Characters"
+    configmapConfig:
+      ExternalSecure: false
+      ExternalDomain: "zitadel.geniro.test"
+      ExternalPort: 80
+      TLS:
+        Enabled: false
+      Database:
+        Postgres:
+          Host: "geniro-test-postgresql"
+          Port: 5432
+          Database: zitadel
+          User:
+            Username: postgres
+            Password: "geniro"
+            SSL:
+              Mode: disable
+          Admin:
+            Username: postgres
+            Password: "geniro"
+            SSL:
+              Mode: disable
+      FirstInstance:
+        Org:
+          Name: "Geniro"
+          Human:
+            Username: "zitadel-admin@geniro.test"
+            Password: "test-admin-password"
+            PasswordChangeRequired: true
+          Machine:
+            Machine:
+              Username: "geniro-init-sa"
+              Name: "Geniro Init Service Account"
+            Pat:
+              ExpirationDate: "2030-01-01T00:00:00Z"
+
+litellm:
+  enabled: true
+
+postgresql:
+  enabled: true
+
+redis:
+  enabled: true
+
+qdrant:
+  enabled: true
+
+daytona:
+  enabled: false

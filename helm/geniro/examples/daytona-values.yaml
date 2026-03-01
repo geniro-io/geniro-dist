@@ -27,7 +27,7 @@ secrets:
   credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
   openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
   litellmMasterKey: "sk-litellm-master-key"
-  litellmSaltKey: "salt"  # Change in production
+  litellmSaltKey: "REPLACE_ME_SALT_KEY"
 
 # -----------------------------------------------------------------------------
 # API — Docker socket is disabled when using Daytona
@@ -100,7 +100,7 @@ keycloak:
   enabled: true
   auth:
     adminUser: admin
-    adminPassword: admin   # REPLACE in production!
+    adminPassword: "REPLACE_ME_ADMIN_PASSWORD"
 
 # -----------------------------------------------------------------------------
 # LiteLLM

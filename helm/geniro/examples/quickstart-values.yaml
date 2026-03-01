@@ -23,7 +23,7 @@ secrets:
 
   # LiteLLM admin key — used to manage models via the LiteLLM admin UI
   litellmMasterKey: "sk-litellm-master-key"
-  litellmSaltKey: "salt"  # Change in production
+  litellmSaltKey: "REPLACE_ME_SALT_KEY"
 
   # GitHub App (optional — needed for GitHub integration)
   # githubApp:
@@ -134,7 +134,7 @@ keycloak:
   enabled: true
   auth:
     adminUser: admin
-    adminPassword: admin   # Change in production!
+    adminPassword: "REPLACE_ME_ADMIN_PASSWORD"
   ingress:
     enabled: true
     className: nginx

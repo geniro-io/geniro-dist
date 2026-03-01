@@ -163,4 +163,7 @@ Called from configmap.yaml to surface errors at render time.
 {{- if and (not .Values.keycloak.enabled) (not .Values.zitadel.enabled) (not .Values.externalKeycloak.url) (not .Values.externalZitadel.url) }}
 {{- fail "An auth provider is required. Set keycloak.enabled=true, zitadel.enabled=true, externalKeycloak.url, or externalZitadel.url" }}
 {{- end }}
+{{- if and .Values.keycloak.enabled (eq .Values.keycloak.auth.adminPassword "admin") }}
+{{- fail "keycloak.auth.adminPassword is set to the insecure default 'admin'. Set a strong password: keycloak.auth.adminPassword=<your-password>" }}
+{{- end }}
 {{- end }}

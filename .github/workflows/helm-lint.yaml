@@ -1,0 +1,15 @@
+name: Helm Lint
+on: [push, pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+      - run: helm dependency update ./helm/geniro
+      - run: helm lint ./helm/geniro -f ./helm/geniro/ci/test-values.yaml
+      - run: helm lint ./helm/geniro -f ./helm/geniro/ci/external-services-values.yaml
+      - run: helm lint ./helm/geniro -f ./helm/geniro/ci/zitadel-values.yaml
+      - run: helm template geniro ./helm/geniro -f ./helm/geniro/ci/test-values.yaml > /dev/null
+      - run: helm template geniro ./helm/geniro -f ./helm/geniro/ci/external-services-values.yaml > /dev/null
+      - run: helm template geniro ./helm/geniro -f ./helm/geniro/ci/zitadel-values.yaml > /dev/null

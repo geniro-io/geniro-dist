@@ -69,6 +69,18 @@ After the Zitadel pod is Ready, complete setup:
 4. Ingress Controller: If you enabled ingress, ensure an ingress controller
    (e.g., ingress-nginx) is installed in your cluster.
 
+{{- if or (eq .Values.api.image.tag "latest") (eq .Values.web.image.tag "latest") }}
+
+NOTE: One or more images use the 'latest' rolling tag with pullPolicy: IfNotPresent.
+For production, pin image tags: --set api.image.tag=<version> --set web.image.tag=<version>
+{{- end }}
+
+{{- if .Values.daytona.enabled }}
+
+NOTE: The Daytona runner API key is stored in a ConfigMap (nginx proxy limitation).
+Restrict ConfigMap RBAC in the {{ .Release.Namespace }} namespace.
+{{- end }}
+
 === Useful Commands ===
 
 Watch pod status:

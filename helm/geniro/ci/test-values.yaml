@@ -3,6 +3,7 @@ secrets:
   credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   openrouterApiKey: "sk-or-test"
   litellmMasterKey: "test-master"
+  litellmSaltKey: "test-salt-key-for-ci-validation"
 
 api:
   ingress:
@@ -27,6 +28,8 @@ daytona:
       encryptionSalt: "fedcba9876543210fedcba9876543210"
 
 keycloak:
+  auth:
+    adminPassword: "test-admin-password-ci"
   ingress:
     enabled: true
     host: auth.geniro.test

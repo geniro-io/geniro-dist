@@ -10,7 +10,20 @@ data:
     #!/bin/bash
     set -e
     export PGPASSWORD=$POSTGRES_PASSWORD
-    for db in geniro keycloak litellm daytona zitadel; do
+    DATABASES="geniro"
+    {{- if .Values.litellm.enabled }}
+    DATABASES="$DATABASES litellm"
+    {{- end }}
+    {{- if .Values.keycloak.enabled }}
+    DATABASES="$DATABASES keycloak"
+    {{- end }}
+    {{- if .Values.daytona.enabled }}
+    DATABASES="$DATABASES daytona"
+    {{- end }}
+    {{- if .Values.zitadel.enabled }}
+    DATABASES="$DATABASES zitadel"
+    {{- end }}
+    for db in $DATABASES; do
       echo "Creating database: $db"
       psql --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
         SELECT 'CREATE DATABASE $db' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$db')\gexec

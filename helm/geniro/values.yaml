@@ -14,6 +14,8 @@
 api:
   image:
     repository: razumru/geniro-api
+    # NOTE: 'latest' is a rolling tag. For production, pin to a specific version
+    # (e.g., tag: v1.2.3) and set pullPolicy: Always or IfNotPresent with a pinned tag.
     tag: latest
     pullPolicy: IfNotPresent
 
@@ -65,6 +67,7 @@ api:
     # NOTE: The Keycloak URL is resolved automatically from externalKeycloak.url
     # (when keycloak.enabled=false) or the internal service URL (when
     # keycloak.enabled=true). See _helpers.tpl geniro.keycloakUrl.
+    authDevMode: false       # Bypass auth for local development. NEVER enable in production.
     keycloakRealm: "geniro"
     keycloakClientId: "geniro"
     # Zitadel — URL and issuer are resolved automatically when zitadel.enabled=true.
@@ -77,6 +80,8 @@ api:
 web:
   image:
     repository: razumru/geniro-web
+    # NOTE: 'latest' is a rolling tag. For production, pin to a specific version
+    # (e.g., tag: v1.2.3) and set pullPolicy: Always or IfNotPresent with a pinned tag.
     tag: latest
     pullPolicy: IfNotPresent
 
@@ -207,6 +212,11 @@ daytona:
       defaultSnapshot: "daytonaio/sandbox:0.5.0-slim"
       proxyDomain: "localhost"
       proxyProtocol: "http"
+    podSecurityContext: {}
+    containerSecurityContext: {}
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
 
   runner:
     image:
@@ -225,11 +235,15 @@ daytona:
       # Required for nested container execution (Docker-in-Docker).
       # Grants full host kernel access. Run on dedicated node pools only.
       privileged: true
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
 
   proxy:
     image:
       repository: nginx
-      tag: alpine
+      # Pin for reproducibility. Update periodically.
+      tag: "1.27-alpine"
       pullPolicy: IfNotPresent
     port: 80
     resources:
@@ -239,6 +253,8 @@ daytona:
       limits:
         cpu: 100m
         memory: 64Mi
+    podSecurityContext: {}
+    containerSecurityContext: {}
 
 # -----------------------------------------------------------------------------
 # PostgreSQL (Bitnami subchart)
@@ -297,7 +313,7 @@ keycloak:
   enabled: true
 
   image:
-    repository: keycloak/keycloak
+    repository: quay.io/keycloak/keycloak
     tag: "26.1.4"
     pullPolicy: IfNotPresent
 
@@ -428,8 +444,8 @@ secrets:
   existingSecret: ""
   credentialEncryptionKey: ""
   openrouterApiKey: ""
-  litellmMasterKey: "master"
-  litellmSaltKey: "salt"   # Used internally by LiteLLM for budget token signing. Change in production.
+  litellmMasterKey: ""    # REQUIRED. Generate with: openssl rand -hex 32
+  litellmSaltKey: ""      # REQUIRED. Used internally by LiteLLM for budget token signing. Generate with: openssl rand -hex 32
   githubApp:
     id: ""
     privateKey: ""

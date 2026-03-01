@@ -22,10 +22,18 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- with .Values.daytona.proxy.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: nginx
           image: "{{ .Values.daytona.proxy.image.repository }}:{{ .Values.daytona.proxy.image.tag }}"
           imagePullPolicy: {{ .Values.daytona.proxy.image.pullPolicy | default "IfNotPresent" }}
+          {{- with .Values.daytona.proxy.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
             - containerPort: {{ .Values.daytona.proxy.port }}
               name: http
@@ -39,21 +47,4 @@ spec:
         - name: proxy-config
           configMap:
             name: {{ include "geniro.fullname" . }}-daytona-proxy-config
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "geniro.fullname" . }}-daytona-proxy
-  labels:
-    {{- include "geniro.labels" . | nindent 4 }}
-    app.kubernetes.io/component: daytona-proxy
-spec:
-  type: ClusterIP
-  ports:
-    - port: {{ .Values.daytona.proxy.port }}
-      targetPort: http
-      protocol: TCP
-      name: http
-  selector:
-    {{- include "geniro.componentSelectorLabels" (dict "component" "daytona-proxy" "context" .) | nindent 4 }}
 {{- end }}
