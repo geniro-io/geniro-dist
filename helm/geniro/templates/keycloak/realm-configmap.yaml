@@ -17,9 +17,9 @@ data:
       "rememberMe": false,
       "verifyEmail": false,
       "resetPasswordAllowed": true,
-      "accessTokenLifespan": 86400,
-      "ssoSessionIdleTimeout": 86400,
-      "ssoSessionMaxLifespan": 86400,
+      "accessTokenLifespan": {{ .Values.keycloak.realm.accessTokenLifespanSeconds | default 300 }},
+      "ssoSessionIdleTimeout": {{ .Values.keycloak.realm.ssoSessionIdleTimeoutSeconds | default 1800 }},
+      "ssoSessionMaxLifespan": {{ .Values.keycloak.realm.ssoSessionMaxLifespanSeconds | default 86400 }},
       "offlineSessionIdleTimeout": 2592000,
       "clients": [
         {
@@ -35,9 +35,9 @@ data:
             "http://localhost:4173/*",
             "http://localhost:5174/*"
           ],
-          "webOrigins": ["*"],
+          "webOrigins": {{ .Values.keycloak.realm.webOrigins | toJson }},
           "standardFlowEnabled": true,
-          "directAccessGrantsEnabled": true,
+          "directAccessGrantsEnabled": false,
           "implicitFlowEnabled": false,
           "serviceAccountsEnabled": false,
           "authorizationServicesEnabled": false,
@@ -46,7 +46,7 @@ data:
           "adminUrl": "",
           "baseUrl": "",
           "attributes": {
-            "post.logout.redirect.uris": "*",
+            "post.logout.redirect.uris": "+",
             "oauth2.device.authorization.grant.enabled": "false"
           }
         }
@@ -62,7 +62,7 @@ data:
           "credentials": [
             {
               "type": "password",
-              "value": "Admin123!",
+              "value": {{ .Values.keycloak.realm.seedUser.password | quote }},
               "temporary": true
             }
           ],

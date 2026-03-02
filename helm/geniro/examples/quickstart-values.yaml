@@ -22,7 +22,7 @@ secrets:
   openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
 
   # LiteLLM admin key — used to manage models via the LiteLLM admin UI
-  litellmMasterKey: "sk-litellm-master-key"
+  litellmMasterKey: "REPLACE_ME_LITELLM_MASTER_KEY"
   litellmSaltKey: "REPLACE_ME_SALT_KEY"
 
   # GitHub App (optional — needed for GitHub integration)
@@ -94,7 +94,7 @@ litellm:
         litellm_params:
           model: openrouter/anthropic/claude-haiku-4-5
           api_key: os.environ/OPENROUTER_API_KEY
-          base_model: claude-haiku-4.5
+          base_model: claude-haiku-4-5
 
       # ── OpenAI ──────────────────────────────────────────────────────────
       - model_name: gpt-4o-mini
@@ -135,6 +135,13 @@ keycloak:
   auth:
     adminUser: admin
     adminPassword: "REPLACE_ME_ADMIN_PASSWORD"
+  realm:
+    # CORS origins — restrict to your actual web hostname in production.
+    webOrigins:
+      - "https://geniro.example.com"
+    seedUser:
+      # WARNING: Stored in ConfigMap (visible in etcd). Change on first login.
+      password: "REPLACE_ME_SEED_PASSWORD"
   ingress:
     enabled: true
     className: nginx
@@ -150,8 +157,8 @@ keycloak:
 postgresql:
   enabled: true
   auth:
-    postgresPassword: "change-me-in-production"
-    password: "change-me-in-production"
+    postgresPassword: "REPLACE_ME_POSTGRES_PASSWORD"
+    password: "REPLACE_ME_POSTGRES_PASSWORD"
 
 # To use an external PostgreSQL instead, set:
 # postgresql:
@@ -229,12 +236,12 @@ qdrant:
 #           Database: zitadel
 #           User:
 #             Username: postgres
-#             Password: "change-me-in-production"
+#             Password: "REPLACE_ME_POSTGRES_PASSWORD"
 #             SSL:
 #               Mode: disable
 #           Admin:
 #             Username: postgres
-#             Password: "change-me-in-production"
+#             Password: "REPLACE_ME_POSTGRES_PASSWORD"
 #             SSL:
 #               Mode: disable
 #       FirstInstance:
@@ -330,7 +337,7 @@ qdrant:
 #   proxy:
 #     image:
 #       repository: nginx
-#       tag: alpine
+#       tag: "1.27-alpine"
 #     port: 80
 #     resources:
 #       requests:

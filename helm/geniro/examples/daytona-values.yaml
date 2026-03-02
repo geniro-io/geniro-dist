@@ -26,7 +26,7 @@
 secrets:
   credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
   openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
-  litellmMasterKey: "sk-litellm-master-key"
+  litellmMasterKey: "REPLACE_ME_LITELLM_MASTER_KEY"
   litellmSaltKey: "REPLACE_ME_SALT_KEY"
 
 # -----------------------------------------------------------------------------
@@ -59,10 +59,10 @@ daytona:
       # REQUIRED: generate unique random values for each deployment.
       #   openssl rand -hex 32  (for adminApiKey and runnerApiKey)
       #   openssl rand -hex 16  (for encryptionKey and encryptionSalt)
-      adminApiKey: ""
-      runnerApiKey: ""
-      encryptionKey: ""
-      encryptionSalt: ""
+      adminApiKey: "REPLACE_ME_generate_with_openssl_rand_hex_32"
+      runnerApiKey: "REPLACE_ME_generate_with_openssl_rand_hex_32"
+      encryptionKey: "REPLACE_ME_generate_with_openssl_rand_hex_32"
+      encryptionSalt: "REPLACE_ME_generate_with_openssl_rand_hex_32"
       defaultSnapshot: "daytonaio/sandbox:0.5.0-slim"
       proxyDomain: "sandboxes.geniro.example.com"
       proxyProtocol: "https"
@@ -83,7 +83,7 @@ daytona:
   proxy:
     image:
       repository: nginx
-      tag: alpine
+      tag: "1.27-alpine"
     port: 80
     resources:
       requests:
@@ -101,6 +101,10 @@ keycloak:
   auth:
     adminUser: admin
     adminPassword: "REPLACE_ME_ADMIN_PASSWORD"
+  realm:
+    seedUser:
+      # WARNING: Stored in ConfigMap (visible in etcd). Change on first login.
+      password: "REPLACE_ME_SEED_PASSWORD"
 
 # -----------------------------------------------------------------------------
 # LiteLLM
@@ -113,6 +117,9 @@ litellm:
 # -----------------------------------------------------------------------------
 postgresql:
   enabled: true
+  auth:
+    postgresPassword: "REPLACE_ME_POSTGRES_PASSWORD"
+    password: "REPLACE_ME_POSTGRES_PASSWORD"
 
 # -----------------------------------------------------------------------------
 # Redis — bundled (default)

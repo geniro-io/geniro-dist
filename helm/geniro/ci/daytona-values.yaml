@@ -1,5 +1,5 @@
 # WARNING: These credentials are for CI template validation only. Never use in a real cluster.
-# Minimal values for helm lint and helm template validation
+# CI test: validate template rendering with Daytona enabled
 secrets:
   credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   openrouterApiKey: "sk-or-test"
@@ -8,51 +8,31 @@ secrets:
 
 api:
   ingress:
-    enabled: true
-    host: api.geniro.test
+    enabled: false
 
 web:
   ingress:
-    enabled: true
-    host: geniro.test
-
-litellm:
-  enabled: true
+    enabled: false
 
 daytona:
   enabled: true
   api:
     env:
-      adminApiKey: "test-admin-key"
-      runnerApiKey: "test-runner-key"
+      adminApiKey: "ci-daytona-admin-key-for-testing"
+      runnerApiKey: "ci-daytona-runner-key-for-testing"
       encryptionKey: "0123456789abcdef0123456789abcdef"
       encryptionSalt: "fedcba9876543210fedcba9876543210"
 
 keycloak:
+  enabled: true
   auth:
-    adminPassword: "test-admin-password-ci"
+    adminPassword: "ci-keycloak-admin-password"
   realm:
     seedUser:
       password: "CiSeedPassword123!"
-  ingress:
-    enabled: true
-    host: auth.geniro.test
 
-# Intentionally keeps keycloak.enabled at its default (true) to test
-# the Keycloak + Zitadel both-enabled render path.
-zitadel:
+litellm:
   enabled: true
-  zitadel:
-    masterkey: "MasterkeyNeedsToHave32Characters"
-    configmapConfig:
-      ExternalDomain: "zitadel.geniro.test"
-      Database:
-        Postgres:
-          Host: "geniro-test-postgresql"
-          User:
-            Password: "geniro"
-          Admin:
-            Password: "geniro"
 
 postgresql:
   enabled: true
@@ -65,3 +45,6 @@ redis:
 
 qdrant:
   enabled: true
+
+zitadel:
+  enabled: false

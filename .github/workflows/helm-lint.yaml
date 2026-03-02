@@ -10,6 +10,49 @@ jobs:
       - run: helm lint ./helm/geniro -f ./helm/geniro/ci/test-values.yaml
       - run: helm lint ./helm/geniro -f ./helm/geniro/ci/external-services-values.yaml
       - run: helm lint ./helm/geniro -f ./helm/geniro/ci/zitadel-values.yaml
+      - run: helm lint ./helm/geniro -f ./helm/geniro/ci/daytona-values.yaml
       - run: helm template geniro ./helm/geniro -f ./helm/geniro/ci/test-values.yaml > /dev/null
       - run: helm template geniro ./helm/geniro -f ./helm/geniro/ci/external-services-values.yaml > /dev/null
       - run: helm template geniro ./helm/geniro -f ./helm/geniro/ci/zitadel-values.yaml > /dev/null
+      - run: helm template geniro ./helm/geniro -f ./helm/geniro/ci/daytona-values.yaml > /dev/null
+
+      # Value assertions
+      - name: Assert POSTGRES_SSL false for bundled postgres
+        run: |
+          helm template geniro ./helm/geniro -f ./helm/geniro/ci/test-values.yaml | grep 'POSTGRES_SSL: "false"'
+
+      - name: Assert POSTGRES_SSL true for external postgres with SSL
+        run: |
+          helm template geniro ./helm/geniro -f ./helm/geniro/ci/external-services-values.yaml | grep 'POSTGRES_SSL: "true"'
+
+      - name: Assert keycloak URL uses configurable port
+        run: |
+          helm template geniro ./helm/geniro -f ./helm/geniro/ci/test-values.yaml --set keycloak.service.port=9090 | grep 'http://geniro-keycloak:9090'
+
+      - name: Assert Daytona validation fires on empty keys
+        run: |
+          if helm template geniro ./helm/geniro \
+            -f ./helm/geniro/ci/test-values.yaml \
+            --set daytona.api.env.adminApiKey="" 2>&1; then
+            echo "FAIL: expected helm template to fail" && exit 1
+          fi
+
+      - name: Assert Daytona runner init container present
+        run: |
+          helm template geniro ./helm/geniro -f ./helm/geniro/ci/daytona-values.yaml | grep 'wait-for-daytona-api'
+
+      - name: Assert Daytona API rendered
+        run: |
+          helm template geniro ./helm/geniro -f ./helm/geniro/ci/daytona-values.yaml | grep 'daytona-api'
+
+      - name: Assert Daytona runner rendered
+        run: |
+          helm template geniro ./helm/geniro -f ./helm/geniro/ci/daytona-values.yaml | grep 'daytona-runner'
+
+      - name: Assert password length guard fires for short keycloak password
+        run: |
+          if helm template geniro ./helm/geniro \
+            -f ./helm/geniro/ci/test-values.yaml \
+            --set keycloak.auth.adminPassword="short" 2>&1; then
+            echo "FAIL: expected helm template to fail" && exit 1
+          fi

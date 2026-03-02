@@ -30,11 +30,13 @@ spec:
       {{- end }}
       initContainers:
         - name: wait-for-postgres
-          image: busybox:1.36
-          command: ['sh', '-c', 'timeout 120 sh -c "until nc -z {{ include "geniro.postgresHost" . }} 5432; do echo waiting for postgres...; sleep 2; done"']
+          image: busybox:1.36@sha256:b9598f8c98e24d0ad42c1742c32516772c3aa2151011ebaf639089bd18c605b8
+          imagePullPolicy: IfNotPresent
+          command: ['sh', '-c', 'timeout 120 sh -c "until nc -z {{ include "geniro.postgresHost" . }} {{ if .Values.postgresql.enabled }}5432{{ else }}{{ .Values.externalPostgresql.port | default 5432 }}{{ end }}; do echo waiting for postgres...; sleep 2; done"']
         - name: wait-for-redis
-          image: busybox:1.36
-          command: ['sh', '-c', 'timeout 120 sh -c "until nc -z {{ include "geniro.redisHost" . }} 6379; do echo waiting for redis...; sleep 2; done"']
+          image: busybox:1.36@sha256:b9598f8c98e24d0ad42c1742c32516772c3aa2151011ebaf639089bd18c605b8
+          imagePullPolicy: IfNotPresent
+          command: ['sh', '-c', 'timeout 120 sh -c "until nc -z {{ include "geniro.redisHost" . }} {{ if .Values.redis.enabled }}6379{{ else }}{{ .Values.externalRedis.port | default 6379 }}{{ end }}; do echo waiting for redis...; sleep 2; done"']
       containers:
         - name: api
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"

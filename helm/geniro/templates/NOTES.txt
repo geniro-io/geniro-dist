@@ -22,7 +22,14 @@ API (via port-forward):
 {{- if .Values.keycloak.enabled }}
 Default credentials (Keycloak realm):
   Username: admin
-  Password: Admin123!  (temporary — you will be prompted to change it)
+  Password: (value of keycloak.realm.seedUser.password — temporary, change on first login)
+  WARNING: The seed password is stored in a ConfigMap (visible in etcd).
+  Change it immediately on first login.
+{{- else if .Values.zitadel.enabled }}
+Using Zitadel as identity provider.
+  See the "Zitadel Post-Install" section below for post-boot steps.
+{{- else if .Values.externalZitadel.url }}
+Using external Zitadel at: {{ .Values.externalZitadel.url }}
 {{- else }}
 Using external Keycloak at: {{ .Values.externalKeycloak.url }}
 Realm: {{ .Values.externalKeycloak.realm }}
@@ -77,8 +84,11 @@ For production, pin image tags: --set api.image.tag=<version> --set web.image.ta
 
 {{- if .Values.daytona.enabled }}
 
-NOTE: The Daytona runner API key is stored in a ConfigMap (nginx proxy limitation).
-Restrict ConfigMap RBAC in the {{ .Release.Namespace }} namespace.
+SECURITY NOTE: The Daytona runner API key is stored in a ConfigMap (nginx limitation).
+  nginx cannot natively reference Kubernetes Secrets for header values.
+  For production: enable etcd encryption at rest and restrict ConfigMap RBAC access
+  in the {{ .Release.Namespace }} namespace. Apply least-privilege RBAC so that only
+  the Daytona proxy ServiceAccount (and cluster admins) can read ConfigMaps.
 {{- end }}
 
 === Useful Commands ===

@@ -68,6 +68,9 @@ litellm:
 
 postgresql:
   enabled: true
+  auth:
+    postgresPassword: "test-ci-postgres-password"
+    password: "test-ci-postgres-password"
 
 redis:
   enabled: true

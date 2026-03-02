@@ -145,6 +145,9 @@ litellm:
 
   podSecurityContext: {}
   containerSecurityContext: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
 
   config:
     general_settings:
@@ -159,6 +162,11 @@ litellm:
     # After first boot, manage models via the LiteLLM admin API
     # (POST /model/new, Authorization: Bearer <litellmMasterKey>).
     # To re-seed from these values, delete the litellm database and redeploy.
+    #
+    # SECURITY WARNING: Do NOT put API keys directly in model_list values.
+    # Use the os.environ/ prefix to reference environment variables instead.
+    # Keys placed here end up in a ConfigMap (unencrypted in etcd).
+    # Example: api_key: os.environ/OPENROUTER_API_KEY
     model_list:
       - model_name: claude-sonnet-4-6
         litellm_params:
@@ -203,9 +211,12 @@ daytona:
       # REQUIRED when daytona.enabled=true. Set to random, unique values.
       adminApiKey: ""
       # SECURITY NOTE: This key is embedded in the Daytona nginx proxy ConfigMap.
-      # ConfigMaps are stored unencrypted in etcd by default. Enable etcd encryption
-      # at rest if your security policy requires it. This is an nginx architectural
-      # limitation — nginx cannot natively reference Kubernetes Secrets for header values.
+      # ConfigMaps are stored unencrypted in etcd by default. This is an nginx
+      # architectural limitation — nginx cannot natively reference Kubernetes Secrets
+      # for header values. Mitigations for production:
+      #   1. Enable etcd encryption at rest (EncryptionConfiguration).
+      #   2. Restrict ConfigMap RBAC — only the Daytona proxy ServiceAccount
+      #      (and cluster admins) should have read access to ConfigMaps in this namespace.
       runnerApiKey: ""
       encryptionKey: ""
       encryptionSalt: ""
@@ -235,6 +246,7 @@ daytona:
       # Required for nested container execution (Docker-in-Docker).
       # Grants full host kernel access. Run on dedicated node pools only.
       privileged: true
+    podSecurityContext: {}
     nodeSelector: {}
     tolerations: []
     affinity: {}
@@ -255,21 +267,31 @@ daytona:
         memory: 64Mi
     podSecurityContext: {}
     containerSecurityContext: {}
+    nodeSelector: {}
+    tolerations: []
+    affinity: {}
 
 # -----------------------------------------------------------------------------
 # PostgreSQL (Bitnami subchart)
 # -----------------------------------------------------------------------------
 postgresql:
   enabled: true
+  # Scoped to PostgreSQL subchart only — allows the non-Bitnami pgvector image.
+  # Remove this block if switching to the standard Bitnami PostgreSQL image.
+  global:
+    security:
+      allowInsecureImages: true
   image:
     registry: docker.io
     repository: pgvector/pgvector
     tag: pg17
     pullPolicy: IfNotPresent
   auth:
+    # NOTE: Avoid URL-special characters (@, :, /, #, ?) in the password.
+    # The password is embedded verbatim in the LITELLM_DATABASE_URL connection string.
     postgresPassword: "geniro"
     username: "postgres"
-    password: "geniro"
+    password: "geniro"   # Used by Bitnami subchart for the auth.username account; set to same value as postgresPassword
     database: "geniro"
   primary:
     initdb:
@@ -288,6 +310,8 @@ externalPostgresql:
   host: ""
   port: 5432
   username: "postgres"
+  # NOTE: Avoid URL-special characters (@, :, /, #, ?) in the password.
+  # The password is embedded verbatim in the LITELLM_DATABASE_URL connection string.
   password: ""
   database: "geniro"
   ssl: false
@@ -318,7 +342,7 @@ keycloak:
     pullPolicy: IfNotPresent
 
   replicas: 1
-  port: 8080
+  port: 8080  # Container port — do not change unless you also modify Keycloak's HTTP listener config
 
   auth:
     adminUser: admin
@@ -334,7 +358,7 @@ keycloak:
 
   service:
     type: ClusterIP
-    port: 80
+    port: 80   # Service port (external-facing) — can be changed freely
 
   ingress:
     enabled: false
@@ -342,6 +366,26 @@ keycloak:
     host: "auth.geniro.local"
     annotations: {}
     tls: []
+
+  # Keycloak realm seed configuration.
+  # WARNING: The seed user password is stored in a ConfigMap (visible in etcd).
+  # The user must change it on first login (temporary=true).
+  realm:
+    # CORS origins for the Geniro OIDC client.
+    # "+" is Keycloak shorthand for "use the same origins as valid redirect URIs",
+    # which is a safe restrictive default. Override with explicit origins if needed
+    # (e.g., ["https://geniro.example.com"]).
+    webOrigins:
+      - "+"
+    # Token lifespans (seconds). Reduce for stricter security.
+    accessTokenLifespanSeconds: 300        # 5 minutes
+    ssoSessionIdleTimeoutSeconds: 1800     # 30 minutes
+    ssoSessionMaxLifespanSeconds: 86400    # 24 hours
+    seedUser:
+      # WARNING: This password is stored in a ConfigMap (plaintext in etcd).
+      # The user is forced to change it on first login (temporary=true).
+      # Set a unique value before installing.
+      password: "replace-with-your-password"
 
   podSecurityContext: {}
   containerSecurityContext: {}
@@ -423,6 +467,7 @@ qdrant:
 externalQdrant:
   host: ""
   port: 6333
+  scheme: "http"   # Set to "https" for Qdrant Cloud or TLS-terminated instances
   apiKey: ""
 
 # -----------------------------------------------------------------------------
@@ -455,11 +500,11 @@ secrets:
 # -----------------------------------------------------------------------------
 # Global
 # -----------------------------------------------------------------------------
-global:
-  security:
-    # Forwarded to Bitnami subcharts (PostgreSQL, Redis) via Helm's global values propagation.
-    # Allows non-Bitnami images (e.g., pgvector/pgvector for PostgreSQL with vector support).
-    allowInsecureImages: true
+# NOTE: global.security.allowInsecureImages is intentionally scoped under the
+# postgresql subchart below (postgresql.global.security.allowInsecureImages).
+# This avoids disabling Bitnami image security checks for other subcharts (Redis).
+# If you switch back to the standard Bitnami PostgreSQL image instead of pgvector,
+# you can remove the postgresql.global block entirely.
 
 imagePullSecrets: []
 nameOverride: ""

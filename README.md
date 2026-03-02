@@ -28,7 +28,13 @@ helm dependency update ./geniro-dist/helm/geniro
 # Install with required secrets
 helm install geniro ./geniro-dist/helm/geniro \
   --set secrets.credentialEncryptionKey=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))") \
-  --set secrets.openrouterApiKey=sk-or-v1-...
+  --set secrets.openrouterApiKey=sk-or-v1-... \
+  --set secrets.litellmMasterKey=$(openssl rand -hex 32) \
+  --set secrets.litellmSaltKey=$(openssl rand -hex 32) \
+  --set keycloak.auth.adminPassword=$(openssl rand -hex 16) \
+  --set keycloak.realm.seedUser.password=ChangeMeOnFirstLogin1! \
+  --set postgresql.auth.postgresPassword=$(openssl rand -hex 16) \
+  --set postgresql.auth.password=$(openssl rand -hex 16)
 ```
 
 ## License

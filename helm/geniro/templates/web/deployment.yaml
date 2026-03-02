@@ -50,6 +50,7 @@ spec:
               port: http
             initialDelaySeconds: 10
             periodSeconds: 5
+            failureThreshold: 3
             timeoutSeconds: 5
       {{- with .Values.web.nodeSelector }}
       nodeSelector:

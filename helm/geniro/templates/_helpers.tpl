@@ -85,7 +85,7 @@ Resolve Keycloak URL.
 */}}
 {{- define "geniro.keycloakUrl" -}}
 {{- if .Values.keycloak.enabled }}
-{{- printf "http://%s-keycloak:80" (include "geniro.fullname" .) }}
+{{- printf "http://%s-keycloak:%v" (include "geniro.fullname" .) .Values.keycloak.service.port }}
 {{- else }}
 {{- .Values.externalKeycloak.url }}
 {{- end }}
@@ -96,9 +96,9 @@ Resolve Qdrant URL.
 */}}
 {{- define "geniro.qdrantUrl" -}}
 {{- if .Values.qdrant.enabled }}
-{{- printf "http://%s-qdrant:6333" (include "geniro.fullname" .) }}
+{{- printf "http://%s-qdrant:%v" (include "geniro.fullname" .) (.Values.qdrant.service.httpPort | default 6333) }}
 {{- else }}
-{{- printf "http://%s:%v" .Values.externalQdrant.host .Values.externalQdrant.port }}
+{{- printf "%s://%s:%v" (.Values.externalQdrant.scheme | default "http") .Values.externalQdrant.host .Values.externalQdrant.port }}
 {{- end }}
 {{- end }}
 
@@ -107,7 +107,7 @@ Resolve LiteLLM base URL.
 */}}
 {{- define "geniro.litellmUrl" -}}
 {{- if .Values.litellm.enabled }}
-{{- printf "http://%s-litellm:%v" (include "geniro.fullname" .) .Values.litellm.port }}
+{{- printf "http://%s-litellm:%v" (include "geniro.fullname" .) .Values.litellm.service.port }}
 {{- else }}
 {{- .Values.externalLitellm.url }}
 {{- end }}
@@ -163,7 +163,33 @@ Called from configmap.yaml to surface errors at render time.
 {{- if and (not .Values.keycloak.enabled) (not .Values.zitadel.enabled) (not .Values.externalKeycloak.url) (not .Values.externalZitadel.url) }}
 {{- fail "An auth provider is required. Set keycloak.enabled=true, zitadel.enabled=true, externalKeycloak.url, or externalZitadel.url" }}
 {{- end }}
-{{- if and .Values.keycloak.enabled (eq .Values.keycloak.auth.adminPassword "admin") }}
-{{- fail "keycloak.auth.adminPassword is set to the insecure default 'admin'. Set a strong password: keycloak.auth.adminPassword=<your-password>" }}
+{{- if and .Values.keycloak.enabled (or (eq .Values.keycloak.auth.adminPassword "admin") (lt (len .Values.keycloak.auth.adminPassword) 8)) }}
+{{- fail "keycloak.auth.adminPassword must be at least 8 characters and not 'admin'." }}
+{{- end }}
+{{- if and .Values.postgresql.enabled (or (eq .Values.postgresql.auth.postgresPassword "geniro") (lt (len .Values.postgresql.auth.postgresPassword) 8)) }}
+{{- fail "postgresql.auth.postgresPassword must be at least 8 characters and not 'geniro'." }}
+{{- end }}
+{{- if .Values.api.env.authDevMode }}
+{{- fail "api.env.authDevMode=true bypasses all authentication. This is not permitted in Helm-managed deployments. Remove or set to false." }}
+{{- end }}
+{{- end }}
+
+{{/*
+Validate Daytona secrets.
+*/}}
+{{- define "geniro.validateDaytona" -}}
+{{- if .Values.daytona.enabled }}
+{{- if not .Values.daytona.api.env.adminApiKey }}
+{{- fail "daytona.api.env.adminApiKey is required when daytona.enabled=true. Generate with: openssl rand -hex 32" }}
+{{- end }}
+{{- if not .Values.daytona.api.env.runnerApiKey }}
+{{- fail "daytona.api.env.runnerApiKey is required when daytona.enabled=true. Generate with: openssl rand -hex 32" }}
+{{- end }}
+{{- if not .Values.daytona.api.env.encryptionKey }}
+{{- fail "daytona.api.env.encryptionKey is required when daytona.enabled=true. Generate with: openssl rand -hex 16" }}
+{{- end }}
+{{- if not .Values.daytona.api.env.encryptionSalt }}
+{{- fail "daytona.api.env.encryptionSalt is required when daytona.enabled=true. Generate with: openssl rand -hex 16" }}
+{{- end }}
 {{- end }}
 {{- end }}

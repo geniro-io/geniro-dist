@@ -26,6 +26,7 @@ externalPostgresql:
   username: "geniro"
   password: "test-password"
   database: "geniro"
+  ssl: true
 
 redis:
   enabled: false

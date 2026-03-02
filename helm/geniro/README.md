@@ -23,8 +23,9 @@ Redis, and Qdrant as bundled dependencies.
 
 PostgreSQL serves as the shared database backend for the API (geniro), Keycloak,
 LiteLLM, and optionally Zitadel and Daytona. The init script conditionally creates
-databases based on which components are enabled: `geniro` (always), plus `keycloak`,
-`litellm`, `daytona`, and `zitadel` only when the corresponding component is enabled.
+databases based on which components are enabled: `keycloak`, `litellm`, `daytona`,
+and `zitadel` when the corresponding component is enabled. The primary application
+database (`postgresql.auth.database`) is created automatically by the Bitnami chart.
 
 ---
 
@@ -68,7 +69,7 @@ You will also need:
 |---|---|---|
 | `credentialEncryptionKey` | AES-256-GCM encryption of stored credentials | `openssl rand -hex 32` |
 | `openrouterApiKey` | LLM access via OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) |
-| `litellmMasterKey` | LiteLLM admin API authentication | Any strong string (default: `master`) |
+| `litellmMasterKey` | LiteLLM admin API authentication | `openssl rand -hex 32` |
 
 ### Step 3 -- Download Chart Dependencies
 
@@ -98,7 +99,7 @@ Install the chart:
 ```bash
 helm install geniro ./helm/geniro \
   -f my-values.yaml \
-  -n geniro --create-namespace
+  -n geniro --create-namespace --cleanup-on-fail
 ```
 
 Or install with inline overrides (minimal):
@@ -107,7 +108,13 @@ Or install with inline overrides (minimal):
 helm install geniro ./helm/geniro \
   --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
   --set secrets.openrouterApiKey=sk-or-v1-YOUR_KEY \
-  -n geniro --create-namespace
+  --set secrets.litellmMasterKey=$(openssl rand -hex 32) \
+  --set secrets.litellmSaltKey=$(openssl rand -hex 32) \
+  --set keycloak.auth.adminPassword=$(openssl rand -hex 16) \
+  --set keycloak.realm.seedUser.password=ChangeMeOnFirstLogin1! \
+  --set postgresql.auth.postgresPassword=$(openssl rand -hex 16) \
+  --set postgresql.auth.password=$(openssl rand -hex 16) \
+  -n geniro --create-namespace --cleanup-on-fail
 ```
 
 ### Step 5 -- Verify the Deployment
@@ -131,7 +138,7 @@ startup with a pre-configured user:
 | Field | Value |
 |---|---|
 | Username | `admin` |
-| Password | `Admin123!` |
+| Password | Value of `keycloak.realm.seedUser.password` (set in your values file) |
 | Temporary | Yes -- Keycloak forces a password change on first login |
 
 Access the Web UI via port-forward (if ingress is not enabled):
@@ -164,8 +171,9 @@ All three route through OpenRouter using a single `OPENROUTER_API_KEY`.
 
 ### Switching from OpenRouter to Direct Provider Keys
 
-To call providers directly instead of routing through OpenRouter, replace the
-`model_list` entries in your values file with inline API keys:
+To call providers directly instead of routing through OpenRouter, add the
+provider API keys as environment variables injected from a Secret, then reference
+them with the `os.environ/` prefix in `model_list`:
 
 ```yaml
 litellm:
@@ -174,26 +182,26 @@ litellm:
       - model_name: claude-sonnet-4-6
         litellm_params:
           model: anthropic/claude-sonnet-4-6
-          api_key: "sk-ant-your-key-here"
+          api_key: os.environ/ANTHROPIC_API_KEY
           max_tokens: 64000
       - model_name: gpt-4o-mini
         litellm_params:
           model: openai/gpt-4o-mini
-          api_key: "sk-your-openai-key"
+          api_key: os.environ/OPENAI_API_KEY
       - model_name: text-embedding-3-small
         litellm_params:
           model: openai/text-embedding-3-small
-          api_key: "sk-your-openai-key"
+          api_key: os.environ/OPENAI_API_KEY
 ```
 
-> **Security note:** Inline API keys in `litellm.config` are stored in a
-> Kubernetes ConfigMap (not a Secret). For production deployments, use the
-> `secrets.existingSecret` mechanism or an external secrets management tool
-> (e.g., Sealed Secrets, External Secrets Operator) to inject provider keys
-> securely. The LiteLLM container does not have an `extraEnv` mechanism, so
-> `os.environ/` references only work for variables already present in the
-> container's environment (such as `OPENROUTER_API_KEY`, which the chart injects
-> from the Secret resource).
+> **SECURITY WARNING:** Do NOT put API keys directly in `litellm.config.model_list`
+> values (e.g., `api_key: "sk-ant-..."`). The `litellm.config` block is rendered
+> into a Kubernetes ConfigMap, which is stored **unencrypted** in etcd. Always use
+> the `os.environ/` prefix to reference environment variables injected from a
+> Secret. The chart already injects `OPENROUTER_API_KEY` from the Secret resource.
+> For additional provider keys, use the `secrets.existingSecret` mechanism or an
+> external secrets management tool (e.g., Sealed Secrets, External Secrets
+> Operator) to inject them as environment variables into the LiteLLM container.
 
 ### Adding More Models
 
@@ -362,6 +370,13 @@ secrets:
 When `existingSecret` is set, the chart skips creating its own Secret resource
 and uses the named Secret for all secret references.
 
+> **Daytona note:** When `daytona.enabled=true` and `existingSecret` is set,
+> `daytona.api.env.runnerApiKey` must still be present in your Helm values (not
+> only in the external Secret). The Daytona nginx proxy ConfigMap embeds the runner
+> API key at render time from Helm values -- nginx cannot reference Kubernetes Secrets
+> for header values. Set it via `--set daytona.api.env.runnerApiKey=<key>` or in
+> your values file alongside `secrets.existingSecret`.
+
 ---
 
 ## Using External Services
@@ -490,11 +505,13 @@ qdrant:
 externalQdrant:
   host: "xyz.us-east-1-0.aws.cloud.qdrant.io"
   port: 6333
+  scheme: "https"                              # "http" (default) or "https" for Qdrant Cloud / TLS
   apiKey: "your-qdrant-cloud-api-key"   # Stored as a Kubernetes Secret
 ```
 
 When `apiKey` is set, the chart injects it as a Secret-sourced `QDRANT_API_KEY` env var.
-Leave empty for unauthenticated Qdrant instances.
+Leave empty for unauthenticated Qdrant instances. Set `scheme: "https"` when connecting
+to Qdrant Cloud or any TLS-terminated Qdrant endpoint.
 
 ### External LiteLLM
 
@@ -562,7 +579,7 @@ ConfigMap-mounted JSON file.
 
 The default realm includes:
 - A `geniro` OIDC client
-- A pre-configured admin user (`admin` / `Admin123!`, temporary password)
+- A pre-configured admin user (`admin` / password from `keycloak.realm.seedUser.password`, temporary)
 
 Keycloak runs in production mode (`start --import-realm`) with `KC_HTTP_ENABLED=true`
 and `KC_PROXY_HEADERS=xforwarded` for reverse-proxy deployments. For production, consider
@@ -852,7 +869,8 @@ helm template geniro ./helm/geniro \
 |---|---|---|
 | `secrets.credentialEncryptionKey` | **Required.** 64-char hex key for AES-256-GCM encryption | `""` |
 | `secrets.openrouterApiKey` | OpenRouter API key for LLM access | `""` |
-| `secrets.litellmMasterKey` | LiteLLM admin API key | `"master"` |
+| `secrets.litellmMasterKey` | LiteLLM admin API key | `""` (required) |
+| `secrets.litellmSaltKey` | LiteLLM budget token signing key | `""` (required) |
 | `secrets.existingSecret` | Use a pre-existing Secret instead of chart-created one | `""` |
 | `api.image.tag` | API image tag | `latest` |
 | `api.replicas` | API replica count | `1` |
