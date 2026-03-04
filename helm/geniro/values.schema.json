@@ -48,10 +48,24 @@
         "enabled": { "type": "boolean" }
       }
     },
+    "web": {
+      "type": "object",
+      "properties": {
+        "apiUrl": { "type": "string" },
+        "websiteUrl": { "type": "string" }
+      }
+    },
     "daytona": {
       "type": "object",
       "properties": {
         "enabled": { "type": "boolean" }
+      }
+    },
+    "externalDaytona": {
+      "type": "object",
+      "properties": {
+        "apiUrl": { "type": "string" },
+        "apiKey": { "type": "string" }
       }
     },
     "keycloak": {
@@ -107,6 +121,7 @@
         "githubApp": {
           "type": "object",
           "properties": {
+            "enabled": { "type": "boolean" },
             "id": { "type": "string" },
             "privateKey": { "type": "string" },
             "clientId": { "type": "string" },

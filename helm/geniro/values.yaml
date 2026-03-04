@@ -88,6 +88,11 @@ web:
   replicas: 1
   port: 4173
 
+  # Runtime URL injection (for container deployments)
+  # Passed as env vars; the entrypoint runs envsubst to inject into config.js
+  apiUrl: ""
+  websiteUrl: ""
+
   resources:
     requests:
       cpu: 100m
@@ -270,6 +275,12 @@ daytona:
     nodeSelector: {}
     tolerations: []
     affinity: {}
+
+# External Daytona — use when daytona.enabled=false but you have an existing
+# Daytona instance (e.g. managed separately in another namespace).
+externalDaytona:
+  apiUrl: ""     # e.g., http://daytona-api.daytona.svc.cluster.local:3000/api
+  apiKey: ""     # API key for authenticating with the external Daytona instance
 
 # -----------------------------------------------------------------------------
 # PostgreSQL (Bitnami subchart)
@@ -483,15 +494,20 @@ secrets:
   #   KEYCLOAK_ADMIN_PASSWORD (when keycloak.enabled=true)
   #   DAYTONA_ADMIN_API_KEY, DAYTONA_RUNNER_API_KEY,
   #   DAYTONA_ENCRYPTION_KEY, DAYTONA_ENCRYPTION_SALT (when daytona.enabled=true)
+  #   DAYTONA_API_KEY (when externalDaytona.apiUrl is set)
+  #   REDIS_URL (when redis.enabled=false)
   #   QDRANT_API_KEY (when qdrant.enabled=false and externalQdrant.apiKey is set)
   #   GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY,
-  #   GITHUB_APP_CLIENT_ID, GITHUB_APP_CLIENT_SECRET (when secrets.githubApp.id is set)
+  #   GITHUB_APP_CLIENT_ID, GITHUB_APP_CLIENT_SECRET (when secrets.githubApp.enabled or .id is set)
   existingSecret: ""
   credentialEncryptionKey: ""
   openrouterApiKey: ""
   litellmMasterKey: ""    # REQUIRED. Generate with: openssl rand -hex 32
   litellmSaltKey: ""      # REQUIRED. Used internally by LiteLLM for budget token signing. Generate with: openssl rand -hex 32
   githubApp:
+    # Set enabled=true when using existingSecret that contains GitHub App keys.
+    # When not using existingSecret, the chart auto-detects from secrets.githubApp.id.
+    enabled: false
     id: ""
     privateKey: ""
     clientId: ""

@@ -163,6 +163,9 @@ Called from configmap.yaml to surface errors at render time.
 {{- if and (not .Values.keycloak.enabled) (not .Values.zitadel.enabled) (not .Values.externalKeycloak.url) (not .Values.externalZitadel.url) }}
 {{- fail "An auth provider is required. Set keycloak.enabled=true, zitadel.enabled=true, externalKeycloak.url, or externalZitadel.url" }}
 {{- end }}
+{{- if and .Values.daytona.enabled .Values.externalDaytona.apiUrl }}
+{{- fail "Cannot enable both daytona.enabled and externalDaytona.apiUrl. Use one or the other." }}
+{{- end }}
 {{- if and .Values.keycloak.enabled (or (eq .Values.keycloak.auth.adminPassword "admin") (lt (len .Values.keycloak.auth.adminPassword) 8)) }}
 {{- fail "keycloak.auth.adminPassword must be at least 8 characters and not 'admin'." }}
 {{- end }}

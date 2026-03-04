@@ -55,7 +55,7 @@ data:
   {{- end }}
 
   # Runtime
-  DEFAULT_RUNTIME_TYPE: {{ if .Values.daytona.enabled }}"Daytona"{{ else }}"Docker"{{ end }}
+  DEFAULT_RUNTIME_TYPE: {{ if or .Values.daytona.enabled .Values.externalDaytona.apiUrl }}"Daytona"{{ else }}"Docker"{{ end }}
   {{- if .Values.api.mountDockerSocket }}
   DOCKER_SOCKET: "/var/run/docker.sock"
   {{- end }}
@@ -66,4 +66,6 @@ data:
   # Daytona
   {{- if .Values.daytona.enabled }}
   DAYTONA_API_URL: {{ printf "http://%s-daytona-api:%v/api" (include "geniro.fullname" .) .Values.daytona.api.port | quote }}
+  {{- else if .Values.externalDaytona.apiUrl }}
+  DAYTONA_API_URL: {{ .Values.externalDaytona.apiUrl | quote }}
   {{- end }}

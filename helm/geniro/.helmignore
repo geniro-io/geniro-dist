@@ -1,3 +1,9 @@
 .git/
 .claude/
 *.orig
+node_modules/
+package.json
+pnpm-lock.yaml
+release.config.cjs
+scripts/
+.github/

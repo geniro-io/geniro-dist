@@ -27,6 +27,11 @@ spec:
         - name: web
           image: "{{ .Values.web.image.repository }}:{{ .Values.web.image.tag }}"
           imagePullPolicy: {{ .Values.web.image.pullPolicy }}
+          env:
+            - name: API_URL
+              value: {{ .Values.web.apiUrl | default "" | quote }}
+            - name: WEBSITE_URL
+              value: {{ .Values.web.websiteUrl | default "" | quote }}
           {{- with .Values.web.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}

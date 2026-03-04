@@ -67,12 +67,14 @@ spec:
                 secretKeyRef:
                   name: {{ include "geniro.secretName" . }}
                   key: LITELLM_MASTER_KEY
+            {{- if not .Values.secrets.existingSecret }}
             - name: OPENROUTER_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "geniro.secretName" . }}
                   key: OPENROUTER_API_KEY
-            {{- if .Values.secrets.githubApp.id }}
+            {{- end }}
+            {{- if or .Values.secrets.githubApp.id .Values.secrets.githubApp.enabled }}
             - name: GITHUB_APP_ID
               valueFrom:
                 secretKeyRef:
@@ -100,15 +102,21 @@ spec:
                 secretKeyRef:
                   name: {{ include "geniro.secretName" . }}
                   key: DAYTONA_ADMIN_API_KEY
+            {{- else if .Values.externalDaytona.apiUrl }}
+            - name: DAYTONA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "geniro.secretName" . }}
+                  key: DAYTONA_API_KEY
             {{- end }}
-            {{- if and (not .Values.redis.enabled) .Values.externalRedis.password }}
+            {{- if and (not .Values.redis.enabled) (or .Values.externalRedis.password .Values.secrets.existingSecret) }}
             - name: REDIS_URL
               valueFrom:
                 secretKeyRef:
                   name: {{ include "geniro.secretName" . }}
                   key: REDIS_URL
             {{- end }}
-            {{- if and (not .Values.qdrant.enabled) .Values.externalQdrant.apiKey }}
+            {{- if and (not .Values.qdrant.enabled) (or .Values.externalQdrant.apiKey .Values.secrets.existingSecret) }}
             - name: QDRANT_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -120,21 +128,20 @@ spec:
             {{- end }}
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
-          # TODO: Upgrade to httpGet probes (e.g., path: /api/health) when a health
-          # endpoint is confirmed in the NestJS API. TCP probes only verify the port
-          # is open, not that the application is fully ready.
           livenessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health/check
               port: http
             initialDelaySeconds: 30
-            periodSeconds: 10
+            periodSeconds: 15
             failureThreshold: 3
             timeoutSeconds: 5
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /health/check
               port: http
-            initialDelaySeconds: 10
-            periodSeconds: 5
+            initialDelaySeconds: 20
+            periodSeconds: 10
             failureThreshold: 3
             timeoutSeconds: 5
           {{- if .Values.api.mountDockerSocket }}
