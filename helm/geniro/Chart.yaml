@@ -5,7 +5,7 @@ description: >
   Deploys API, Web UI, LiteLLM proxy, Keycloak or Zitadel identity provider,
   and optional Daytona sandbox runtime.
 type: application
-version: 1.0.5
+version: 1.1.0
 appVersion: "latest"
 home: https://github.com/geniro-io/geniro
 sources:
