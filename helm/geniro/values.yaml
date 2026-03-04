@@ -73,6 +73,10 @@ api:
     # Zitadel — URL and issuer are resolved automatically when zitadel.enabled=true.
     # Set clientId after Zitadel first-boot OIDC app creation (see NOTES.txt).
     zitadelClientId: ""
+    # Docker image used for sandbox execution (Daytona or Docker runtime).
+    # Override with a Harbor-hosted image to avoid Docker Hub rate limits and cold-start delays.
+    # Example: harbor-daytona.openfab.dev/library/geniro-runtime:latest
+    dockerRuntimeImage: ""
 
 # -----------------------------------------------------------------------------
 # Web (Frontend — React/Vite)

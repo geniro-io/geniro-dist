@@ -56,6 +56,9 @@ data:
 
   # Runtime
   DEFAULT_RUNTIME_TYPE: {{ if or .Values.daytona.enabled .Values.externalDaytona.apiUrl }}"Daytona"{{ else }}"Docker"{{ end }}
+  {{- if .Values.api.env.dockerRuntimeImage }}
+  DOCKER_RUNTIME_IMAGE: {{ .Values.api.env.dockerRuntimeImage | quote }}
+  {{- end }}
   {{- if .Values.api.mountDockerSocket }}
   DOCKER_SOCKET: "/var/run/docker.sock"
   {{- end }}
