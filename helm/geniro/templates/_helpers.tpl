@@ -166,6 +166,9 @@ Called from configmap.yaml to surface errors at render time.
 {{- if and .Values.daytona.enabled .Values.externalDaytona.apiUrl }}
 {{- fail "Cannot enable both daytona.enabled and externalDaytona.apiUrl. Use one or the other." }}
 {{- end }}
+{{- if and .Values.externalDaytona.apiUrl (not .Values.externalDaytona.apiKey) (not .Values.secrets.existingSecret) }}
+{{- fail "externalDaytona.apiKey is required when externalDaytona.apiUrl is set and secrets.existingSecret is not used." }}
+{{- end }}
 {{- if and .Values.keycloak.enabled (or (eq .Values.keycloak.auth.adminPassword "admin") (lt (len .Values.keycloak.auth.adminPassword) 8)) }}
 {{- fail "keycloak.auth.adminPassword must be at least 8 characters and not 'admin'." }}
 {{- end }}

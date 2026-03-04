@@ -5,6 +5,11 @@ VERSION="$1"
 CHART_DIR="helm/geniro"
 OCI_REGISTRY="oci://docker.io/razumru"
 
+echo "Adding Helm repositories..."
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add qdrant https://qdrant.github.io/qdrant-helm
+helm repo add zitadel https://charts.zitadel.com
+
 echo "Building chart dependencies..."
 helm dependency build "${CHART_DIR}"
 
