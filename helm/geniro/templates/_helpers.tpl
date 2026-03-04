@@ -96,7 +96,7 @@ Resolve Qdrant URL.
 */}}
 {{- define "geniro.qdrantUrl" -}}
 {{- if .Values.qdrant.enabled }}
-{{- printf "http://%s-qdrant:%v" (include "geniro.fullname" .) (.Values.qdrant.service.httpPort | default 6333) }}
+{{- printf "http://%s-qdrant:%v" (include "geniro.fullname" .) (dig "service" "httpPort" 6333 .Values.qdrant) }}
 {{- else }}
 {{- printf "%s://%s:%v" (.Values.externalQdrant.scheme | default "http") .Values.externalQdrant.host .Values.externalQdrant.port }}
 {{- end }}
