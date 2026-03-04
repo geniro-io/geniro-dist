@@ -39,4 +39,4 @@ helm install geniro ./geniro-dist/helm/geniro \
 
 ## License
 
-Licensed under the [Apache License 2.0](../geniro/LICENSE) with additional conditions.
+Licensed under the [Apache License 2.0](LICENSE) with additional conditions. A commercial license is required for operating a multi-tenant SaaS. See [LICENSE](LICENSE) for details.
