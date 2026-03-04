@@ -39,4 +39,4 @@ helm install geniro ./geniro-dist/helm/geniro \
 
 ## License
 
-MIT License with [Commons Clause](https://commonsclause.com/).
+Licensed under the [Apache License 2.0](../geniro/LICENSE) with additional conditions.
