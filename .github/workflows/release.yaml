@@ -17,6 +17,7 @@ env:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
   release:
@@ -75,9 +76,13 @@ jobs:
         with:
           version: 'v3.17.3'
 
-      - name: Helm registry login
+      - name: Helm registry login (Docker Hub)
         if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | helm registry login docker.io -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Helm registry login (GHCR)
+        if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Prepare repository
         if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'

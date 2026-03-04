@@ -4,6 +4,7 @@ set -euo pipefail
 VERSION="$1"
 CHART_DIR="helm/geniro"
 OCI_REGISTRY="oci://docker.io/razumru"
+GHCR_REGISTRY="oci://ghcr.io/razumru"
 
 echo "Adding Helm repositories..."
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -25,5 +26,8 @@ fi
 echo "Pushing ${PACKAGE_FILE} to ${OCI_REGISTRY}..."
 helm push "${PACKAGE_FILE}" "${OCI_REGISTRY}"
 
+echo "Pushing ${PACKAGE_FILE} to ${GHCR_REGISTRY}..."
+helm push "${PACKAGE_FILE}" "${GHCR_REGISTRY}"
+
 rm -f "${PACKAGE_FILE}"
-echo "Published geniro chart v${VERSION} to ${OCI_REGISTRY}"
+echo "Published geniro chart v${VERSION} to ${OCI_REGISTRY} and ${GHCR_REGISTRY}"
