@@ -43,7 +43,32 @@ database (`postgresql.auth.database`) is created automatically by the Bitnami ch
 
 ## Step-by-Step Deployment
 
-### Step 1 -- Add Helm Repositories
+### Option A -- Install from OCI Registry (Recommended)
+
+The chart is published to Docker Hub as an OCI artifact. This is the simplest way
+to install -- no need to clone the repository or manage subchart dependencies.
+
+```bash
+helm install geniro oci://docker.io/razumru/geniro \
+  --version <version> \
+  -f my-values.yaml \
+  -n geniro --create-namespace --cleanup-on-fail
+```
+
+Skip to **Step 2** below to generate the required secrets for your values file.
+
+To upgrade an existing release:
+
+```bash
+helm upgrade geniro oci://docker.io/razumru/geniro \
+  --version <version> \
+  -f my-values.yaml \
+  -n geniro
+```
+
+### Option B -- Install from Source
+
+#### Step 1 -- Add Helm Repositories
 
 ```bash
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -730,6 +755,13 @@ environment variable injection for the API URL.
 Always pass your values file explicitly:
 
 ```bash
+# From OCI registry (recommended)
+helm upgrade geniro oci://docker.io/razumru/geniro \
+  --version <version> \
+  -f my-values.yaml \
+  -n geniro
+
+# From local source
 helm upgrade geniro ./helm/geniro \
   -f my-values.yaml \
   -n geniro

@@ -13,6 +13,7 @@ on:
 
 env:
   NODE_VERSION: 22
+  TAG_PATTERN: '@geniro-dist/chart@*'
 
 permissions:
   contents: write
@@ -33,34 +34,59 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check for chart changes
+        id: changes
+        run: |
+          git fetch --tags --force --prune
+
+          LAST_TAG="$(git tag --merged HEAD --list "${{ env.TAG_PATTERN }}" | sort -V | tail -n 1)"
+
+          if [[ -z "$LAST_TAG" ]]; then
+            echo "No previous release tag found — treating as changed"
+            echo "chart_changed=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$LAST_TAG"..HEAD -- helm/ scripts/ | grep -q .; then
+            echo "Chart files changed since $LAST_TAG"
+            echo "chart_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No chart changes since $LAST_TAG — skipping release"
+            echo "chart_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup PNPM
+        if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
         uses: pnpm/action-setup@v3
         with:
           run_install: false
 
       - name: Setup Node.js
+        if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
         uses: actions/setup-node@v4.4.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
 
       - name: Install dependencies
+        if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: pnpm install --frozen-lockfile
 
       - name: Setup Helm
+        if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
         uses: azure/setup-helm@v4
         with:
           version: 'v3.17.3'
 
       - name: Helm registry login
+        if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | helm registry login docker.io -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Prepare repository
+        if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: |
           git config user.email "ci@geniro.ai"
           git config user.name "Geniro Bot"
 
       - name: Semantic Release
+        if: steps.changes.outputs.chart_changed == 'true' || github.event_name == 'workflow_dispatch'
         run: pnpm run up-versions
         env:
           GH_TOKEN: ${{ steps.generate_token.outputs.token }}
