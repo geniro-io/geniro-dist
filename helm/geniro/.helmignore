@@ -1,4 +1,3 @@
 .git/
 .claude/
 *.orig
-charts/*.tgz
