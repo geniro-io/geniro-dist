@@ -45,10 +45,17 @@ database (`postgresql.auth.database`) is created automatically by the Bitnami ch
 
 ### Option A -- Install from OCI Registry (Recommended)
 
-The chart is published to Docker Hub as an OCI artifact. This is the simplest way
-to install -- no need to clone the repository or manage subchart dependencies.
+The chart is published to two OCI registries. **GitHub Container Registry (ghcr.io)
+is recommended** — it supports anonymous pulls without authentication.
 
 ```bash
+# Recommended: GitHub Container Registry (anonymous pull, no login required)
+helm install geniro oci://ghcr.io/geniro-io/geniro \
+  --version <version> \
+  -f my-values.yaml \
+  -n geniro --create-namespace --cleanup-on-fail
+
+# Alternative: Docker Hub
 helm install geniro oci://docker.io/razumru/geniro \
   --version <version> \
   -f my-values.yaml \
@@ -60,7 +67,7 @@ Skip to **Step 2** below to generate the required secrets for your values file.
 To upgrade an existing release:
 
 ```bash
-helm upgrade geniro oci://docker.io/razumru/geniro \
+helm upgrade geniro oci://ghcr.io/geniro-io/geniro \
   --version <version> \
   -f my-values.yaml \
   -n geniro
