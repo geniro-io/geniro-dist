@@ -4,7 +4,7 @@ set -euo pipefail
 VERSION="$1"
 CHART_DIR="helm/geniro"
 OCI_REGISTRY="oci://docker.io/razumru"
-GHCR_REGISTRY="oci://ghcr.io/razumru"
+GHCR_REGISTRY="oci://ghcr.io/geniro-io"
 
 echo "Adding Helm repositories..."
 helm repo add bitnami https://charts.bitnami.com/bitnami
