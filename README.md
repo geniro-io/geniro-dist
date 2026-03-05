@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src="assets/logo.png" alt="Geniro" width="400" />
+
+</div>
+
 # Geniro Distribution
 
 Deployment artifacts, packaging, and infrastructure tools for the **Geniro AI Agent Graph Platform**.
