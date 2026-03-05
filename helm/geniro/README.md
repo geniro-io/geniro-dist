@@ -86,20 +86,10 @@ helm repo update
 
 ### Step 2 -- Generate Required Secrets
 
-Generate a 64-character hex key for AES-256-GCM credential encryption:
-
-```bash
-openssl rand -hex 32
-```
-
-This key encrypts all stored credentials (GitHub PATs, API keys, etc.). **Back it
-up securely.** If lost, all stored credentials become unrecoverable.
-
-You will also need:
+You will need:
 
 | Secret | Purpose | How to Get |
 |---|---|---|
-| `credentialEncryptionKey` | AES-256-GCM encryption of stored credentials | `openssl rand -hex 32` |
 | `openrouterApiKey` | LLM access via OpenRouter | [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `litellmMasterKey` | LiteLLM admin API authentication | `openssl rand -hex 32` |
 
@@ -138,7 +128,6 @@ Or install with inline overrides (minimal):
 
 ```bash
 helm install geniro ./helm/geniro \
-  --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
   --set secrets.openrouterApiKey=sk-or-v1-YOUR_KEY \
   --set secrets.litellmMasterKey=$(openssl rand -hex 32) \
   --set secrets.litellmSaltKey=$(openssl rand -hex 32) \
@@ -350,7 +339,6 @@ By default, the chart creates a Kubernetes Secret from values you provide:
 
 ```yaml
 secrets:
-  credentialEncryptionKey: "<64-char-hex>"   # Required
   openrouterApiKey: "sk-or-v1-..."           # OpenRouter key
   litellmMasterKey: "my-strong-key"          # LiteLLM admin key
 ```
@@ -367,7 +355,6 @@ keys**:
 
 ```bash
 kubectl create secret generic geniro-secrets -n geniro \
-  --from-literal=CREDENTIAL_ENCRYPTION_KEY="$(openssl rand -hex 32)" \
   --from-literal=OPENROUTER_API_KEY="sk-or-v1-YOUR_KEY" \
   --from-literal=LITELLM_MASTER_KEY="my-strong-key" \
   --from-literal=LITELLM_SALT_KEY="your-salt-key" \
@@ -424,7 +411,6 @@ cluster infrastructure, disable all bundled dependencies:
 # my-values.yaml — Geniro with all external services
 
 secrets:
-  credentialEncryptionKey: "<64-char-hex>"
   openrouterApiKey: "sk-or-v1-..."
   litellmMasterKey: "my-strong-key"
 
@@ -637,7 +623,6 @@ Zitadel Helm subchart.
 ```bash
 helm install geniro ./helm/geniro \
   -f examples/zitadel-values.yaml \
-  --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
   --set zitadel.zitadel.masterkey="YourExactly32CharacterMasterkey!" \
   -n geniro --create-namespace
 ```
@@ -679,7 +664,6 @@ helm install geniro ./helm/geniro \
   --set externalZitadel.url=https://zitadel.example.com \
   --set externalZitadel.issuer=https://zitadel.example.com \
   --set api.env.zitadelClientId=<CLIENT_ID> \
-  --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
   -n geniro --create-namespace
 ```
 
@@ -896,8 +880,7 @@ helm template geniro ./helm/geniro -f ./helm/geniro/ci/test-values.yaml > /dev/n
 
 # Render with the quickstart example
 helm template geniro ./helm/geniro \
-  -f ./helm/geniro/examples/quickstart-values.yaml \
-  --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) > /dev/null
+  -f ./helm/geniro/examples/quickstart-values.yaml > /dev/null
 ```
 
 ---
@@ -906,7 +889,6 @@ helm template geniro ./helm/geniro \
 
 | Parameter | Description | Default |
 |---|---|---|
-| `secrets.credentialEncryptionKey` | **Required.** 64-char hex key for AES-256-GCM encryption | `""` |
 | `secrets.openrouterApiKey` | OpenRouter API key for LLM access | `""` |
 | `secrets.litellmMasterKey` | LiteLLM admin API key | `""` (required) |
 | `secrets.litellmSaltKey` | LiteLLM budget token signing key | `""` (required) |

@@ -1,6 +1,5 @@
 # CI test: validate template rendering with all external services (BYO mode)
 secrets:
-  credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   openrouterApiKey: "sk-or-test"
   litellmMasterKey: "test-master"
   litellmSaltKey: "test-salt-key-for-ci-validation"

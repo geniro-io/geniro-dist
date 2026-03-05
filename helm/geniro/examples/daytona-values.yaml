@@ -13,7 +13,6 @@
 #
 #   helm install geniro ./helm/geniro \
 #     -f examples/daytona-values.yaml \
-#     --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
 #     --set daytona.api.env.adminApiKey=$ADMIN_KEY \
 #     --set daytona.api.env.runnerApiKey=$RUNNER_KEY \
 #     --set daytona.api.env.encryptionKey=$ENC_KEY \
@@ -24,7 +23,6 @@
 # Secrets (REQUIRED -- replace placeholders before installing)
 # -----------------------------------------------------------------------------
 secrets:
-  credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
   openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
   litellmMasterKey: "REPLACE_ME_LITELLM_MASTER_KEY"
   litellmSaltKey: "REPLACE_ME_SALT_KEY"

@@ -6,7 +6,6 @@
 # Usage:
 #   helm install geniro ./helm/geniro \
 #     -f examples/zitadel-values.yaml \
-#     --set secrets.credentialEncryptionKey=$(openssl rand -hex 32) \
 #     --set zitadel.zitadel.masterkey="YourExactly32CharacterMasterkey!" \
 #     -n geniro --create-namespace
 #
@@ -21,7 +20,6 @@
 # Secrets (REQUIRED -- replace placeholders before installing)
 # -----------------------------------------------------------------------------
 secrets:
-  credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
   openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
   litellmMasterKey: "REPLACE_ME_LITELLM_MASTER_KEY"
   litellmSaltKey: "REPLACE_ME_SALT_KEY"

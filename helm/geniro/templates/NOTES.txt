@@ -60,20 +60,16 @@ After the Zitadel pod is Ready, complete setup:
 
 === Important Notes ===
 
-1. CREDENTIAL_ENCRYPTION_KEY: This key encrypts all stored credentials (GitHub PATs,
-   API keys, etc.). Back it up securely. If lost, all stored credentials become
-   unrecoverable.
-
-2. Frontend Config: The Web image has API_URL compiled in at build time via
+1. Frontend Config: The Web image has API_URL compiled in at build time via
    geniro-web/src/config/production.ts. If you are using custom domains, you must
    edit production.ts and rebuild the web image before deploying.
 
-3. Docker Socket: By default, the API does NOT mount the host Docker socket
+2. Docker Socket: By default, the API does NOT mount the host Docker socket
    (api.mountDockerSocket=false). To enable Docker-based tool execution, set
    api.mountDockerSocket=true. Alternatively, deploy the Daytona sandbox runtime
    (daytona.enabled=true) for isolated container execution without a host socket.
 
-4. Ingress Controller: If you enabled ingress, ensure an ingress controller
+3. Ingress Controller: If you enabled ingress, ensure an ingress controller
    (e.g., ingress-nginx) is installed in your cluster.
 
 {{- if or (eq .Values.api.image.tag "latest") (eq .Values.web.image.tag "latest") }}

@@ -14,10 +14,6 @@
 # Secrets (REQUIRED — replace placeholders before installing)
 # -----------------------------------------------------------------------------
 secrets:
-  # 64-char hex key for encrypting stored credentials.
-  # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-  credentialEncryptionKey: "REPLACE_ME_64_CHAR_HEX_KEY_HERE_________________________________"
-
   # OpenRouter API key — get one at https://openrouter.ai/keys
   openrouterApiKey: "sk-or-v1-REPLACE_WITH_YOUR_OPENROUTER_KEY"
 

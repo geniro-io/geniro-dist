@@ -4,9 +4,6 @@
 # All values in this file serve as defaults. Override with:
 #   helm install geniro ./geniro-dist/helm/geniro -f my-values.yaml
 #
-# Required values (no defaults):
-#   secrets.credentialEncryptionKey  — 64-char hex, generate with:
-#     node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 # -----------------------------------------------------------------------------
 # API (Backend — NestJS)
@@ -206,7 +203,7 @@ daytona:
   api:
     image:
       repository: daytonaio/daytona-api
-      tag: v0.145.0
+      tag: v0.149.0
       pullPolicy: IfNotPresent
     port: 3986
     resources:
@@ -241,7 +238,7 @@ daytona:
   runner:
     image:
       repository: daytonaio/daytona-runner
-      tag: v0.145.0
+      tag: v0.149.0
       pullPolicy: IfNotPresent
     port: 8080
     resources:
@@ -491,8 +488,7 @@ externalQdrant:
 secrets:
   # If set, the chart uses this pre-existing Kubernetes Secret instead of creating one.
   # Required keys:
-  #   CREDENTIAL_ENCRYPTION_KEY, OPENROUTER_API_KEY, LITELLM_MASTER_KEY,
-  #   LITELLM_SALT_KEY, POSTGRES_PASSWORD
+  #   OPENROUTER_API_KEY, LITELLM_MASTER_KEY, LITELLM_SALT_KEY, POSTGRES_PASSWORD
   # Conditional keys (include when the corresponding feature is enabled):
   #   LITELLM_DATABASE_URL (when litellm.enabled=true)
   #   KEYCLOAK_ADMIN_PASSWORD (when keycloak.enabled=true)
@@ -504,7 +500,6 @@ secrets:
   #   GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY,
   #   GITHUB_APP_CLIENT_ID, GITHUB_APP_CLIENT_SECRET (when secrets.githubApp.enabled or .id is set)
   existingSecret: ""
-  credentialEncryptionKey: ""
   openrouterApiKey: ""
   litellmMasterKey: ""    # REQUIRED. Generate with: openssl rand -hex 32
   litellmSaltKey: ""      # REQUIRED. Used internally by LiteLLM for budget token signing. Generate with: openssl rand -hex 32

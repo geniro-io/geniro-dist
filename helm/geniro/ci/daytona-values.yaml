@@ -1,7 +1,6 @@
 # WARNING: These credentials are for CI template validation only. Never use in a real cluster.
 # CI test: validate template rendering with Daytona enabled
 secrets:
-  credentialEncryptionKey: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   openrouterApiKey: "sk-or-test"
   litellmMasterKey: "test-master"
   litellmSaltKey: "test-salt-key-for-ci-validation"

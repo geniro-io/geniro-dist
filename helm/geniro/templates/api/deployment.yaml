@@ -52,11 +52,6 @@ spec:
             - configMapRef:
                 name: {{ include "geniro.fullname" . }}-api-config
           env:
-            - name: CREDENTIAL_ENCRYPTION_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "geniro.secretName" . }}
-                  key: CREDENTIAL_ENCRYPTION_KEY
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
