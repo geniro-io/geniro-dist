@@ -498,7 +498,7 @@ secrets:
   #   DAYTONA_ENCRYPTION_KEY, DAYTONA_ENCRYPTION_SALT (when daytona.enabled=true)
   #   DAYTONA_API_KEY (when externalDaytona.apiUrl is set)
   #   REDIS_URL (when redis.enabled=false)
-  #   QDRANT_API_KEY (when qdrant.enabled=false and externalQdrant.apiKey is set)
+  #   QDRANT_API_KEY (when externalQdrant.apiKey is set, or when qdrant.enabled=true and qdrant.apiKey is set)
   #   GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY,
   #   GITHUB_APP_CLIENT_ID, GITHUB_APP_CLIENT_SECRET (when secrets.githubApp.enabled or .id is set)
   existingSecret: ""

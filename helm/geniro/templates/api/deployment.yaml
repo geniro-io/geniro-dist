@@ -111,7 +111,7 @@ spec:
                   name: {{ include "geniro.secretName" . }}
                   key: REDIS_URL
             {{- end }}
-            {{- if and (not .Values.qdrant.enabled) (or .Values.externalQdrant.apiKey .Values.secrets.existingSecret) }}
+            {{- if or (and (not .Values.qdrant.enabled) (or .Values.externalQdrant.apiKey .Values.secrets.existingSecret)) (and .Values.qdrant.enabled .Values.qdrant.apiKey) }}
             - name: QDRANT_API_KEY
               valueFrom:
                 secretKeyRef:
