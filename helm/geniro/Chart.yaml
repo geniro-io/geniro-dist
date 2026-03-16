@@ -19,6 +19,9 @@ annotations:
   keycloak/version: "26.1.4"
   litellm/default-tag: "main-stable"
   nginx/version: "1.27-alpine"
+  artifacthub.io/changes: |
+    - kind: changed
+      description: "Renamed camelCase env var keys to uppercase (BREAKING)"
 
 dependencies:
   - name: postgresql
