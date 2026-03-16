@@ -38,7 +38,7 @@ jobs:
         run: |
           if helm template geniro ./helm/geniro \
             -f ./helm/geniro/ci/test-values.yaml \
-            --set daytona.api.env.adminApiKey="" 2>&1; then
+            --set daytona.api.env.DAYTONA_ADMIN_API_KEY="" 2>&1; then
             echo "FAIL: expected helm template to fail" && exit 1
           fi
 

@@ -12,6 +12,7 @@ module.exports = {
       {
         preset: 'angular',
         releaseRules: [
+          { breaking: true, release: 'major' },
           { type: 'docs', release: 'patch' },
           { type: 'feat', release: 'minor' },
           { type: 'chore', release: 'patch' },
