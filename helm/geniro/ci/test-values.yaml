@@ -22,10 +22,10 @@ daytona:
   enabled: true
   api:
     env:
-      adminApiKey: "test-admin-key"
-      runnerApiKey: "test-runner-key"
-      encryptionKey: "0123456789abcdef0123456789abcdef"
-      encryptionSalt: "fedcba9876543210fedcba9876543210"
+      DAYTONA_ADMIN_API_KEY: "test-admin-key"
+      DAYTONA_RUNNER_API_KEY: "test-runner-key"
+      DAYTONA_ENCRYPTION_KEY: "0123456789abcdef0123456789abcdef"
+      DAYTONA_ENCRYPTION_SALT: "fedcba9876543210fedcba9876543210"
 
 keycloak:
   auth:

@@ -103,11 +103,11 @@ spec:
             - name: DEFAULT_RUNNER_API_VERSION
               value: "2"
             - name: DEFAULT_SNAPSHOT
-              value: {{ .Values.daytona.api.env.defaultSnapshot | quote }}
+              value: {{ .Values.daytona.api.env.DEFAULT_SNAPSHOT | quote }}
             - name: PROXY_DOMAIN
-              value: {{ .Values.daytona.api.env.proxyDomain | quote }}
+              value: {{ .Values.daytona.api.env.PROXY_DOMAIN | quote }}
             - name: PROXY_PROTOCOL
-              value: {{ .Values.daytona.api.env.proxyProtocol | quote }}
+              value: {{ .Values.daytona.api.env.PROXY_PROTOCOL | quote }}
             - name: PROXY_API_KEY
               valueFrom:
                 secretKeyRef:

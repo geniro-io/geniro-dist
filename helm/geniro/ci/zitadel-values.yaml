@@ -6,8 +6,8 @@ secrets:
 
 api:
   env:
-    authProvider: "zitadel"
-    zitadelClientId: "test-client-id"
+    AUTH_PROVIDER: "zitadel"
+    ZITADEL_CLIENT_ID: "test-client-id"
   ingress:
     enabled: false
 

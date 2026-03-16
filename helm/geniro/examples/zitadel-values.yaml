@@ -13,7 +13,7 @@
 # Retrieve the client ID and upgrade the release:
 #   helm upgrade geniro ./helm/geniro \
 #     -f examples/zitadel-values.yaml \
-#     --set api.env.zitadelClientId=<CLIENT_ID> \
+#     --set api.env.ZITADEL_CLIENT_ID=<CLIENT_ID> \
 #     -n geniro
 
 # -----------------------------------------------------------------------------
@@ -29,9 +29,9 @@ secrets:
 # -----------------------------------------------------------------------------
 api:
   env:
-    authProvider: "zitadel"
+    AUTH_PROVIDER: "zitadel"
     # Set after Zitadel first boot (dynamic OIDC client ID)
-    zitadelClientId: ""
+    ZITADEL_CLIENT_ID: ""
 
 # -----------------------------------------------------------------------------
 # Keycloak — disabled (replaced by Zitadel)

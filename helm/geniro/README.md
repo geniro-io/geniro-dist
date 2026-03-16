@@ -390,10 +390,10 @@ When `existingSecret` is set, the chart skips creating its own Secret resource
 and uses the named Secret for all secret references.
 
 > **Daytona note:** When `daytona.enabled=true` and `existingSecret` is set,
-> `daytona.api.env.runnerApiKey` must still be present in your Helm values (not
+> `daytona.api.env.DAYTONA_RUNNER_API_KEY` must still be present in your Helm values (not
 > only in the external Secret). The Daytona nginx proxy ConfigMap embeds the runner
 > API key at render time from Helm values -- nginx cannot reference Kubernetes Secrets
-> for header values. Set it via `--set daytona.api.env.runnerApiKey=<key>` or in
+> for header values. Set it via `--set daytona.api.env.DAYTONA_RUNNER_API_KEY=<key>` or in
 > your values file alongside `secrets.existingSecret`.
 
 ---
@@ -503,16 +503,16 @@ externalKeycloak:
 
 api:
   env:
-    authProvider: "keycloak"
-    keycloakRealm: "my-realm"         # sets KEYCLOAK_REALM env var
-    keycloakClientId: "geniro-client" # sets KEYCLOAK_CLIENT_ID env var
+    AUTH_PROVIDER: "keycloak"
+    KEYCLOAK_REALM: "my-realm"         # sets KEYCLOAK_REALM env var
+    KEYCLOAK_CLIENT_ID: "geniro-client" # sets KEYCLOAK_CLIENT_ID env var
 ```
 
 > **NOTE:** The `KEYCLOAK_URL` env var is resolved by the `geniro.keycloakUrl`
 > helper in `_helpers.tpl`, which reads `externalKeycloak.url` when
-> `keycloak.enabled=false`. Do NOT set the URL via `api.env.keycloakUrl` -- that
-> value is not consumed by any template. The realm and client ID are set via
-> `api.env.keycloakRealm` and `api.env.keycloakClientId`.
+> `keycloak.enabled=false`. Do NOT set it via `api.env` -- the URL is not
+> configurable through env overrides. The realm and client ID are set via
+> `api.env.KEYCLOAK_REALM` and `api.env.KEYCLOAK_CLIENT_ID`.
 
 ### External Qdrant
 
@@ -648,8 +648,8 @@ pod is ready:
    ```bash
    helm upgrade geniro ./helm/geniro \
      -f my-values.yaml \
-     --set api.env.zitadelClientId=<CLIENT_ID> \
-     --set api.env.authProvider=zitadel \
+     --set api.env.ZITADEL_CLIENT_ID=<CLIENT_ID> \
+     --set api.env.AUTH_PROVIDER=zitadel \
      -n geniro
    ```
 
@@ -660,10 +660,10 @@ To use an existing Zitadel instance instead of the bundled subchart:
 ```bash
 helm install geniro ./helm/geniro \
   --set zitadel.enabled=false \
-  --set api.env.authProvider=zitadel \
+  --set api.env.AUTH_PROVIDER=zitadel \
   --set externalZitadel.url=https://zitadel.example.com \
   --set externalZitadel.issuer=https://zitadel.example.com \
-  --set api.env.zitadelClientId=<CLIENT_ID> \
+  --set api.env.ZITADEL_CLIENT_ID=<CLIENT_ID> \
   -n geniro --create-namespace
 ```
 
@@ -704,10 +704,10 @@ daytona:
   enabled: true
   api:
     env:
-      adminApiKey: "generate-a-random-key"
-      runnerApiKey: "generate-another-random-key"
-      encryptionKey: "32-char-hex-key"
-      encryptionSalt: "32-char-hex-salt"
+      DAYTONA_ADMIN_API_KEY: "generate-a-random-key"
+      DAYTONA_RUNNER_API_KEY: "generate-another-random-key"
+      DAYTONA_ENCRYPTION_KEY: "32-char-hex-key"
+      DAYTONA_ENCRYPTION_SALT: "32-char-hex-salt"
 
 api:
   mountDockerSocket: false   # Disable Docker socket when using Daytona
@@ -718,7 +718,7 @@ api:
 > full host kernel access. Run Daytona runner pods on dedicated, isolated node
 > pools only.
 
-> **Security Note:** The Daytona runner API key (`daytona.api.env.runnerApiKey`)
+> **Security Note:** The Daytona runner API key (`daytona.api.env.DAYTONA_RUNNER_API_KEY`)
 > is embedded in the nginx proxy ConfigMap as an `Authorization` header value.
 > ConfigMaps are stored unencrypted in etcd by default. This is an nginx
 > architectural limitation -- nginx cannot natively reference Kubernetes Secrets
@@ -769,7 +769,7 @@ when using `--reuse-values`:
 # Correct: explicit values file + additional overrides
 helm upgrade geniro ./helm/geniro \
   -f my-values.yaml \
-  --set api.env.zitadelClientId=<CLIENT_ID> \
+  --set api.env.ZITADEL_CLIENT_ID=<CLIENT_ID> \
   -n geniro
 
 # Risky: --reuse-values alone may miss new chart defaults
@@ -898,10 +898,10 @@ helm template geniro ./helm/geniro \
 | `api.ingress.enabled` | Enable API ingress | `false` |
 | `api.mountDockerSocket` | Mount host Docker socket for tool execution | `false` |
 | `api.extraEnv` | Additional env vars for the API container | `[]` |
-| `api.env.authProvider` | Identity provider: `keycloak` or `zitadel` | `"keycloak"` |
-| `api.env.keycloakRealm` | Keycloak realm name (sets `KEYCLOAK_REALM`) | `"geniro"` |
-| `api.env.keycloakClientId` | Keycloak client ID (sets `KEYCLOAK_CLIENT_ID`) | `"geniro"` |
-| `api.env.zitadelClientId` | Zitadel OIDC client ID (set after first boot) | `""` |
+| `api.env.AUTH_PROVIDER` | Identity provider: `keycloak` or `zitadel` | `"keycloak"` |
+| `api.env.KEYCLOAK_REALM` | Keycloak realm name (sets `KEYCLOAK_REALM`) | `"geniro"` |
+| `api.env.KEYCLOAK_CLIENT_ID` | Keycloak client ID (sets `KEYCLOAK_CLIENT_ID`) | `"geniro"` |
+| `api.env.ZITADEL_CLIENT_ID` | Zitadel OIDC client ID (set after first boot) | `""` |
 | `web.image.tag` | Web UI image tag | `latest` |
 | `web.ingress.enabled` | Enable Web UI ingress | `false` |
 | `litellm.enabled` | Deploy LiteLLM proxy | `true` |

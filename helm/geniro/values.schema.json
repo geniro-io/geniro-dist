@@ -15,7 +15,7 @@
         "env": {
           "type": "object",
           "properties": {
-            "authProvider": {
+            "AUTH_PROVIDER": {
               "type": "string",
               "enum": ["keycloak", "zitadel"]
             }
@@ -51,8 +51,13 @@
     "web": {
       "type": "object",
       "properties": {
-        "apiUrl": { "type": "string" },
-        "websiteUrl": { "type": "string" }
+        "env": {
+          "type": "object",
+          "properties": {
+            "API_URL": { "type": "string" },
+            "WEBSITE_URL": { "type": "string" }
+          }
+        }
       }
     },
     "daytona": {

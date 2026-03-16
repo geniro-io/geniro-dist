@@ -51,7 +51,7 @@ spec:
             - name: API_VERSION
               value: "2"
             - name: RUNNER_DOMAIN
-              value: {{ .Values.daytona.api.env.proxyDomain | quote }}
+              value: {{ .Values.daytona.api.env.PROXY_DOMAIN | quote }}
             - name: LOG_LEVEL
               value: "info"
             - name: DAEMON_START_TIMEOUT_SEC

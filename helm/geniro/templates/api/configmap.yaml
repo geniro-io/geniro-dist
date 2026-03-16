@@ -37,16 +37,16 @@ data:
   QDRANT_URL: {{ include "geniro.qdrantUrl" . | quote }}
 
   # Auth — Keycloak (primary)
-  AUTH_PROVIDER: {{ .Values.api.env.authProvider | default "keycloak" | quote }}
-  AUTH_DEV_MODE: {{ .Values.api.env.authDevMode | toString | quote }}
+  AUTH_PROVIDER: {{ .Values.api.env.AUTH_PROVIDER | default "keycloak" | quote }}
+  AUTH_DEV_MODE: {{ .Values.api.env.AUTH_DEV_MODE | toString | quote }}
   KEYCLOAK_URL: {{ include "geniro.keycloakUrl" . | quote }}
-  KEYCLOAK_REALM: {{ .Values.api.env.keycloakRealm | default "geniro" | quote }}
-  KEYCLOAK_CLIENT_ID: {{ .Values.api.env.keycloakClientId | default "geniro" | quote }}
+  KEYCLOAK_REALM: {{ .Values.api.env.KEYCLOAK_REALM | default "geniro" | quote }}
+  KEYCLOAK_CLIENT_ID: {{ .Values.api.env.KEYCLOAK_CLIENT_ID | default "geniro" | quote }}
 
-  # Auth — Zitadel (set api.env.authProvider=zitadel to activate)
+  # Auth — Zitadel (set api.env.AUTH_PROVIDER=zitadel to activate)
   ZITADEL_URL: {{ include "geniro.zitadelUrl" . | quote }}
   ZITADEL_ISSUER: {{ include "geniro.zitadelIssuer" . | quote }}
-  ZITADEL_CLIENT_ID: {{ .Values.api.env.zitadelClientId | default "" | quote }}
+  ZITADEL_CLIENT_ID: {{ .Values.api.env.ZITADEL_CLIENT_ID | default "" | quote }}
 
   # LiteLLM
   {{- $litellmUrl := include "geniro.litellmUrl" . }}
@@ -56,7 +56,7 @@ data:
 
   # Runtime
   DEFAULT_RUNTIME_TYPE: {{ if or .Values.daytona.enabled .Values.externalDaytona.apiUrl }}"Daytona"{{ else }}"Docker"{{ end }}
-  DOCKER_RUNTIME_IMAGE: {{ .Values.api.env.dockerRuntimeImage | default "razumru/geniro-runtime:latest" | quote }}
+  DOCKER_RUNTIME_IMAGE: {{ .Values.api.env.DOCKER_RUNTIME_IMAGE | default "razumru/geniro-runtime:latest" | quote }}
   {{- if .Values.api.mountDockerSocket }}
   DOCKER_SOCKET: "/var/run/docker.sock"
   {{- end }}

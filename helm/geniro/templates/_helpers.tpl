@@ -175,8 +175,8 @@ Called from configmap.yaml to surface errors at render time.
 {{- if and .Values.postgresql.enabled (or (eq .Values.postgresql.auth.postgresPassword "geniro") (lt (len .Values.postgresql.auth.postgresPassword) 8)) }}
 {{- fail "postgresql.auth.postgresPassword must be at least 8 characters and not 'geniro'." }}
 {{- end }}
-{{- if .Values.api.env.authDevMode }}
-{{- fail "api.env.authDevMode=true bypasses all authentication. This is not permitted in Helm-managed deployments. Remove or set to false." }}
+{{- if .Values.api.env.AUTH_DEV_MODE }}
+{{- fail "api.env.AUTH_DEV_MODE=true bypasses all authentication. This is not permitted in Helm-managed deployments. Remove or set to false." }}
 {{- end }}
 {{- end }}
 
@@ -185,17 +185,17 @@ Validate Daytona secrets.
 */}}
 {{- define "geniro.validateDaytona" -}}
 {{- if .Values.daytona.enabled }}
-{{- if not .Values.daytona.api.env.adminApiKey }}
-{{- fail "daytona.api.env.adminApiKey is required when daytona.enabled=true. Generate with: openssl rand -hex 32" }}
+{{- if not .Values.daytona.api.env.DAYTONA_ADMIN_API_KEY }}
+{{- fail "daytona.api.env.DAYTONA_ADMIN_API_KEY is required when daytona.enabled=true. Generate with: openssl rand -hex 32" }}
 {{- end }}
-{{- if not .Values.daytona.api.env.runnerApiKey }}
-{{- fail "daytona.api.env.runnerApiKey is required when daytona.enabled=true. Generate with: openssl rand -hex 32" }}
+{{- if not .Values.daytona.api.env.DAYTONA_RUNNER_API_KEY }}
+{{- fail "daytona.api.env.DAYTONA_RUNNER_API_KEY is required when daytona.enabled=true. Generate with: openssl rand -hex 32" }}
 {{- end }}
-{{- if not .Values.daytona.api.env.encryptionKey }}
-{{- fail "daytona.api.env.encryptionKey is required when daytona.enabled=true. Generate with: openssl rand -hex 16" }}
+{{- if not .Values.daytona.api.env.DAYTONA_ENCRYPTION_KEY }}
+{{- fail "daytona.api.env.DAYTONA_ENCRYPTION_KEY is required when daytona.enabled=true. Generate with: openssl rand -hex 16" }}
 {{- end }}
-{{- if not .Values.daytona.api.env.encryptionSalt }}
-{{- fail "daytona.api.env.encryptionSalt is required when daytona.enabled=true. Generate with: openssl rand -hex 16" }}
+{{- if not .Values.daytona.api.env.DAYTONA_ENCRYPTION_SALT }}
+{{- fail "daytona.api.env.DAYTONA_ENCRYPTION_SALT is required when daytona.enabled=true. Generate with: openssl rand -hex 16" }}
 {{- end }}
 {{- end }}
 {{- end }}

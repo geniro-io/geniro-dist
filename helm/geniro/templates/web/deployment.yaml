@@ -29,9 +29,9 @@ spec:
           imagePullPolicy: {{ .Values.web.image.pullPolicy }}
           env:
             - name: API_URL
-              value: {{ .Values.web.apiUrl | default "" | quote }}
+              value: {{ .Values.web.env.API_URL | default "" | quote }}
             - name: WEBSITE_URL
-              value: {{ .Values.web.websiteUrl | default "" | quote }}
+              value: {{ .Values.web.env.WEBSITE_URL | default "" | quote }}
           {{- with .Values.web.containerSecurityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}

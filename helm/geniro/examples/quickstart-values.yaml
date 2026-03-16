@@ -201,13 +201,13 @@ qdrant:
 # To use Zitadel instead of Keycloak:
 #   1. Uncomment the zitadel block below
 #   2. Set keycloak.enabled: false
-#   3. Set api.env.authProvider: "zitadel"
+#   3. Set api.env.AUTH_PROVIDER: "zitadel"
 #
 # IMPORTANT: After first install, Zitadel generates OIDC client IDs dynamically.
 # You must retrieve the client ID and upgrade the release:
 #   helm upgrade geniro ./helm/geniro \
 #     -f examples/quickstart-values.yaml \
-#     --set api.env.zitadelClientId=<CLIENT_ID>
+#     --set api.env.ZITADEL_CLIENT_ID=<CLIENT_ID>
 #
 # Zitadel v3.4.7 is pinned because the Helm chart defaults to v4.x.
 # v3.x still includes Login v1 built-in (no separate login container needed).
@@ -258,8 +258,8 @@ qdrant:
 #   enabled: false
 # api:
 #   env:
-#     authProvider: "zitadel"
-#     zitadelClientId: ""   # Set after Zitadel first boot
+#     AUTH_PROVIDER: "zitadel"
+#     ZITADEL_CLIENT_ID: ""   # Set after Zitadel first boot
 
 # --- External Keycloak (instead of bundled) ---
 # To use an external Keycloak instance, disable the bundled one and point
@@ -273,9 +273,9 @@ qdrant:
 #
 # api:
 #   env:
-#     authProvider: "keycloak"
-#     keycloakRealm: "my-realm"         # sets KEYCLOAK_REALM env var
-#     keycloakClientId: "geniro"        # sets KEYCLOAK_CLIENT_ID env var
+#     AUTH_PROVIDER: "keycloak"
+#     KEYCLOAK_REALM: "my-realm"         # sets KEYCLOAK_REALM env var
+#     KEYCLOAK_CLIENT_ID: "geniro"        # sets KEYCLOAK_CLIENT_ID env var
 
 # -----------------------------------------------------------------------------
 # Daytona (Sandbox Runtime — disabled by default)
@@ -309,13 +309,13 @@ qdrant:
 #         cpu: 1000m
 #         memory: 1Gi
 #     env:
-#       adminApiKey: ""       # REQUIRED: generate with: openssl rand -hex 32
-#       runnerApiKey: ""      # REQUIRED: shared by runner + proxy
-#       encryptionKey: ""     # REQUIRED: generate with: openssl rand -hex 16
-#       encryptionSalt: ""    # REQUIRED: generate with: openssl rand -hex 16
-#       defaultSnapshot: "daytonaio/sandbox:0.5.0-slim"
-#       proxyDomain: "sandboxes.geniro.example.com"
-#       proxyProtocol: "https"
+#       DAYTONA_ADMIN_API_KEY: ""       # REQUIRED: generate with: openssl rand -hex 32
+#       DAYTONA_RUNNER_API_KEY: ""      # REQUIRED: shared by runner + proxy
+#       DAYTONA_ENCRYPTION_KEY: ""     # REQUIRED: generate with: openssl rand -hex 16
+#       DAYTONA_ENCRYPTION_SALT: ""    # REQUIRED: generate with: openssl rand -hex 16
+#       DEFAULT_SNAPSHOT: "daytonaio/sandbox:0.5.0-slim"
+#       PROXY_DOMAIN: "sandboxes.geniro.example.com"
+#       PROXY_PROTOCOL: "https"
 #   runner:
 #     image:
 #       repository: daytonaio/daytona-runner

@@ -53,8 +53,8 @@ After the Zitadel pod is Ready, complete setup:
 4. Upgrade the release with the client ID:
    helm upgrade {{ .Release.Name }} ./helm/geniro \
      --reuse-values \
-     --set api.env.zitadelClientId=<CLIENT_ID> \
-     --set api.env.authProvider=zitadel
+     --set api.env.ZITADEL_CLIENT_ID=<CLIENT_ID> \
+     --set api.env.AUTH_PROVIDER=zitadel
 
 {{- end }}
 

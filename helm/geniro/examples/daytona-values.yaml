@@ -13,10 +13,10 @@
 #
 #   helm install geniro ./helm/geniro \
 #     -f examples/daytona-values.yaml \
-#     --set daytona.api.env.adminApiKey=$ADMIN_KEY \
-#     --set daytona.api.env.runnerApiKey=$RUNNER_KEY \
-#     --set daytona.api.env.encryptionKey=$ENC_KEY \
-#     --set daytona.api.env.encryptionSalt=$ENC_SALT \
+#     --set daytona.api.env.DAYTONA_ADMIN_API_KEY=$ADMIN_KEY \
+#     --set daytona.api.env.DAYTONA_RUNNER_API_KEY=$RUNNER_KEY \
+#     --set daytona.api.env.DAYTONA_ENCRYPTION_KEY=$ENC_KEY \
+#     --set daytona.api.env.DAYTONA_ENCRYPTION_SALT=$ENC_SALT \
 #     -n geniro --create-namespace
 
 # -----------------------------------------------------------------------------
@@ -55,15 +55,15 @@ daytona:
         memory: 1Gi
     env:
       # REQUIRED: generate unique random values for each deployment.
-      #   openssl rand -hex 32  (for adminApiKey and runnerApiKey)
-      #   openssl rand -hex 16  (for encryptionKey and encryptionSalt)
-      adminApiKey: "REPLACE_ME_generate_with_openssl_rand_hex_32"
-      runnerApiKey: "REPLACE_ME_generate_with_openssl_rand_hex_32"
-      encryptionKey: "REPLACE_ME_generate_with_openssl_rand_hex_32"
-      encryptionSalt: "REPLACE_ME_generate_with_openssl_rand_hex_32"
-      defaultSnapshot: "daytonaio/sandbox:0.5.0-slim"
-      proxyDomain: "sandboxes.geniro.example.com"
-      proxyProtocol: "https"
+      #   openssl rand -hex 32  (for DAYTONA_ADMIN_API_KEY and DAYTONA_RUNNER_API_KEY)
+      #   openssl rand -hex 16  (for DAYTONA_ENCRYPTION_KEY and DAYTONA_ENCRYPTION_SALT)
+      DAYTONA_ADMIN_API_KEY: "REPLACE_ME_generate_with_openssl_rand_hex_32"
+      DAYTONA_RUNNER_API_KEY: "REPLACE_ME_generate_with_openssl_rand_hex_32"
+      DAYTONA_ENCRYPTION_KEY: "REPLACE_ME_generate_with_openssl_rand_hex_32"
+      DAYTONA_ENCRYPTION_SALT: "REPLACE_ME_generate_with_openssl_rand_hex_32"
+      DEFAULT_SNAPSHOT: "daytonaio/sandbox:0.5.0-slim"
+      PROXY_DOMAIN: "sandboxes.geniro.example.com"
+      PROXY_PROTOCOL: "https"
   runner:
     image:
       repository: daytonaio/daytona-runner

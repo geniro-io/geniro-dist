@@ -60,22 +60,22 @@ api:
 
   # Auth and service env vars
   env:
-    authProvider: "keycloak"
+    AUTH_PROVIDER: "keycloak"
     # NOTE: The Keycloak URL is resolved automatically from externalKeycloak.url
     # (when keycloak.enabled=false) or the internal service URL (when
     # keycloak.enabled=true). See _helpers.tpl geniro.keycloakUrl.
-    authDevMode: false       # Bypass auth for local development. NEVER enable in production.
-    keycloakRealm: "geniro"
-    keycloakClientId: "geniro"
+    AUTH_DEV_MODE: false       # Bypass auth for local development. NEVER enable in production.
+    KEYCLOAK_REALM: "geniro"
+    KEYCLOAK_CLIENT_ID: "geniro"
     # Zitadel — URL and issuer are resolved automatically when zitadel.enabled=true.
     # Set clientId after Zitadel first-boot OIDC app creation (see NOTES.txt).
-    zitadelClientId: ""
+    ZITADEL_CLIENT_ID: ""
     # Image used for sandbox execution (applies to both Daytona and Docker runtimes).
     # For Daytona: this is the image Daytona builds a snapshot from on first use.
     # For Docker: this is the image pulled directly by the Docker daemon.
     # Override with a Harbor-hosted or pinned tag to avoid Docker Hub rate limits.
     # Example: harbor-daytona.openfab.dev/library/geniro-runtime:1.21.1-latest
-    dockerRuntimeImage: "razumru/geniro-runtime:latest"
+    DOCKER_RUNTIME_IMAGE: "razumru/geniro-runtime:latest"
 
 # -----------------------------------------------------------------------------
 # Web (Frontend — React/Vite)
@@ -93,8 +93,9 @@ web:
 
   # Runtime URL injection (for container deployments)
   # Passed as env vars; the entrypoint runs envsubst to inject into config.js
-  apiUrl: ""
-  websiteUrl: ""
+  env:
+    API_URL: ""
+    WEBSITE_URL: ""
 
   resources:
     requests:
@@ -217,7 +218,7 @@ daytona:
         memory: 1Gi
     env:
       # REQUIRED when daytona.enabled=true. Set to random, unique values.
-      adminApiKey: ""
+      DAYTONA_ADMIN_API_KEY: ""
       # SECURITY NOTE: This key is embedded in the Daytona nginx proxy ConfigMap.
       # ConfigMaps are stored unencrypted in etcd by default. This is an nginx
       # architectural limitation — nginx cannot natively reference Kubernetes Secrets
@@ -225,12 +226,12 @@ daytona:
       #   1. Enable etcd encryption at rest (EncryptionConfiguration).
       #   2. Restrict ConfigMap RBAC — only the Daytona proxy ServiceAccount
       #      (and cluster admins) should have read access to ConfigMaps in this namespace.
-      runnerApiKey: ""
-      encryptionKey: ""
-      encryptionSalt: ""
-      defaultSnapshot: "daytonaio/sandbox:0.5.0-slim"
-      proxyDomain: "localhost"
-      proxyProtocol: "http"
+      DAYTONA_RUNNER_API_KEY: ""
+      DAYTONA_ENCRYPTION_KEY: ""
+      DAYTONA_ENCRYPTION_SALT: ""
+      DEFAULT_SNAPSHOT: "daytonaio/sandbox:0.5.0-slim"
+      PROXY_DOMAIN: "localhost"
+      PROXY_PROTOCOL: "http"
     podSecurityContext: {}
     containerSecurityContext: {}
     nodeSelector: {}
@@ -410,7 +411,7 @@ keycloak:
 externalKeycloak:
   url: ""
   # NOTE: realm is informational only. The API reads its Keycloak config from
-  # api.env.keycloakRealm and api.env.keycloakClientId.
+  # api.env.KEYCLOAK_REALM and api.env.KEYCLOAK_CLIENT_ID.
   realm: geniro
 
 # -----------------------------------------------------------------------------
@@ -421,7 +422,7 @@ externalKeycloak:
 zitadel:
   enabled: false
   # UPGRADE NOTE: Zitadel generates a dynamic client ID after first boot.
-  # You must retrieve it and pass api.env.zitadelClientId explicitly on upgrades.
+  # You must retrieve it and pass api.env.ZITADEL_CLIENT_ID explicitly on upgrades.
   # Do not rely on --reuse-values alone since it skips new defaults.
   image:
     tag: v3.4.7   # Pin to v3.x; the chart defaults to v4.x
@@ -469,7 +470,7 @@ zitadel:
 externalZitadel:
   url: ""        # e.g., https://zitadel.example.com
   issuer: ""     # e.g., https://zitadel.example.com (usually same as url)
-  # NOTE: OIDC Client ID is set via api.env.zitadelClientId, not here.
+  # NOTE: OIDC Client ID is set via api.env.ZITADEL_CLIENT_ID, not here.
 
 # -----------------------------------------------------------------------------
 # Qdrant (official Helm chart)
