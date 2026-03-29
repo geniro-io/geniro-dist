@@ -44,7 +44,7 @@ daytona:
   api:
     image:
       repository: daytonaio/daytona-api
-      tag: v0.145.0
+      tag: v0.158.1
     port: 3986
     resources:
       requests:
@@ -61,13 +61,13 @@ daytona:
       DAYTONA_RUNNER_API_KEY: "REPLACE_ME_generate_with_openssl_rand_hex_32"
       DAYTONA_ENCRYPTION_KEY: "REPLACE_ME_generate_with_openssl_rand_hex_32"
       DAYTONA_ENCRYPTION_SALT: "REPLACE_ME_generate_with_openssl_rand_hex_32"
-      DEFAULT_SNAPSHOT: "daytonaio/sandbox:0.5.0-slim"
+      DEFAULT_SNAPSHOT: "daytonaio/sandbox:0.6.0-slim"
       PROXY_DOMAIN: "sandboxes.geniro.example.com"
       PROXY_PROTOCOL: "https"
   runner:
     image:
       repository: daytonaio/daytona-runner
-      tag: v0.145.0
+      tag: v0.158.1
     port: 8080
     resources:
       requests:

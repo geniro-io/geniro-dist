@@ -206,7 +206,7 @@ daytona:
   api:
     image:
       repository: daytonaio/daytona-api
-      tag: v0.149.0
+      tag: v0.158.1
       pullPolicy: IfNotPresent
     port: 3986
     resources:
@@ -229,7 +229,7 @@ daytona:
       DAYTONA_RUNNER_API_KEY: ""
       DAYTONA_ENCRYPTION_KEY: ""
       DAYTONA_ENCRYPTION_SALT: ""
-      DEFAULT_SNAPSHOT: "daytonaio/sandbox:0.5.0-slim"
+      DEFAULT_SNAPSHOT: "daytonaio/sandbox:0.6.0-slim"
       PROXY_DOMAIN: "localhost"
       PROXY_PROTOCOL: "http"
     podSecurityContext: {}
@@ -241,7 +241,7 @@ daytona:
   runner:
     image:
       repository: daytonaio/daytona-runner
-      tag: v0.149.0
+      tag: v0.158.1
       pullPolicy: IfNotPresent
     port: 8080
     resources:
