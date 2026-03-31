@@ -47,6 +47,14 @@ api:
     maxReplicas: 5
     targetCPUUtilizationPercentage: 70
 
+  # Database migration Job — runs as a Helm pre-install/pre-upgrade hook.
+  # When enabled, migrations run in a separate Job before the API starts,
+  # ensuring the schema is up-to-date before any API pod boots.
+  migration:
+    enabled: true
+    backoffLimit: 3              # Number of retries before marking the Job as failed
+    activeDeadlineSeconds: 300   # Hard timeout (5 minutes)
+
   extraEnv: []
   # Mount the Docker socket for container execution. SECURITY: grants root-equivalent
   # access on the host node. Set to true ONLY when DEFAULT_RUNTIME_TYPE=Docker.

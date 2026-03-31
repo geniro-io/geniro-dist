@@ -21,7 +21,7 @@ data:
   POSTGRES_USERNAME: {{ .Values.externalPostgresql.username | default "postgres" | quote }}
   POSTGRES_DATABASE: {{ .Values.externalPostgresql.database | default "geniro" | quote }}
   {{- end }}
-  POSTGRES_RUN_MIGRATIONS: "true"
+  POSTGRES_RUN_MIGRATIONS: {{ if .Values.api.migration.enabled }}"false"{{ else }}"true"{{ end }}
   POSTGRES_SSL: {{ if and (not .Values.postgresql.enabled) .Values.externalPostgresql.ssl }}"true"{{ else }}"false"{{ end }}
 
   # Redis
