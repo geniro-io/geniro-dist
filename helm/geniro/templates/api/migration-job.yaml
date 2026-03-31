@@ -56,8 +56,10 @@ spec:
                 secretKeyRef:
                   name: {{ include "geniro.secretName" . }}
                   key: POSTGRES_PASSWORD
+            {{- if and (not .Values.postgresql.enabled) .Values.externalPostgresql.ssl }}
             - name: POSTGRES_SSL
-              value: {{ if and (not .Values.postgresql.enabled) .Values.externalPostgresql.ssl }}"true"{{ else }}"false"{{ end }}
+              value: "true"
+            {{- end }}
           resources:
             requests:
               cpu: 100m
