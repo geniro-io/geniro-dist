@@ -61,6 +61,10 @@ data:
   DOCKER_SOCKET: "/var/run/docker.sock"
   {{- end }}
 
+  # Versions
+  API_VERSION: {{ .Values.api.image.tag | quote }}
+  WEB_VERSION: {{ .Values.web.image.tag | quote }}
+
   # Knowledge base
   KNOWLEDGE_REINDEX_ON_STARTUP: "true"
 
