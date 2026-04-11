@@ -54,6 +54,9 @@ data:
   LLM_BASE_URL: {{ $litellmUrl | quote }}
   {{- end }}
 
+  # OpenBao (Secrets Vault)
+  OPENBAO_ADDR: {{ include "geniro.openbaoAddr" . | quote }}
+
   # Runtime
   DEFAULT_RUNTIME_TYPE: {{ if or .Values.daytona.enabled .Values.externalDaytona.apiUrl }}"Daytona"{{ else }}"Docker"{{ end }}
   DOCKER_RUNTIME_IMAGE: {{ .Values.api.env.DOCKER_RUNTIME_IMAGE | default "razumru/geniro-runtime:latest" | quote }}

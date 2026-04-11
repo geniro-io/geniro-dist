@@ -1,0 +1,18 @@
+{{- if .Values.openbao.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "geniro.fullname" . }}-openbao-data
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.openbao.persistence.size }}
+  {{- if .Values.openbao.persistence.storageClassName }}
+  storageClassName: {{ .Values.openbao.persistence.storageClassName }}
+  {{- end }}
+{{- end }}

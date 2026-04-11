@@ -124,6 +124,21 @@ litellm:
 #   url: "http://my-litellm.example.com:4000"
 
 # -----------------------------------------------------------------------------
+# OpenBao (Secrets Vault)
+# -----------------------------------------------------------------------------
+# Stores user-managed secrets referenced by graph nodes. The bundled instance
+# uses a dev root token suitable only for single-tenant deployments.
+openbao:
+  enabled: true
+
+# To use an external OpenBao or HashiCorp Vault instance instead:
+# openbao:
+#   enabled: false
+# externalOpenbao:
+#   addr: "https://vault.example.com"
+#   token: "<scoped-policy-token>"   # NOT a root token in production
+
+# -----------------------------------------------------------------------------
 # Keycloak
 # -----------------------------------------------------------------------------
 keycloak:

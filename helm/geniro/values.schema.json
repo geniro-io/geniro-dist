@@ -115,6 +115,12 @@
         "enabled": { "type": "boolean" }
       }
     },
+    "openbao": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" }
+      }
+    },
     "secrets": {
       "type": "object",
       "properties": {

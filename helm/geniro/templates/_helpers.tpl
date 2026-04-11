@@ -114,6 +114,17 @@ Resolve LiteLLM base URL.
 {{- end }}
 
 {{/*
+Resolve OpenBao address.
+*/}}
+{{- define "geniro.openbaoAddr" -}}
+{{- if .Values.openbao.enabled }}
+{{- printf "http://%s-openbao:%v" (include "geniro.fullname" .) .Values.openbao.service.port }}
+{{- else }}
+{{- .Values.externalOpenbao.addr }}
+{{- end }}
+{{- end }}
+
+{{/*
 Resolve Zitadel base URL.
 */}}
 {{- define "geniro.zitadelUrl" -}}
@@ -177,6 +188,14 @@ Called from configmap.yaml to surface errors at render time.
 {{- end }}
 {{- if .Values.api.env.AUTH_DEV_MODE }}
 {{- fail "api.env.AUTH_DEV_MODE=true bypasses all authentication. This is not permitted in Helm-managed deployments. Remove or set to false." }}
+{{- end }}
+{{- if and (not .Values.openbao.enabled) (not .Values.secrets.existingSecret) }}
+{{- if not .Values.externalOpenbao.addr }}
+{{- fail "externalOpenbao.addr is required when openbao.enabled=false" }}
+{{- end }}
+{{- if not .Values.externalOpenbao.token }}
+{{- fail "externalOpenbao.token is required when openbao.enabled=false (unless using secrets.existingSecret)" }}
+{{- end }}
 {{- end }}
 {{- end }}
 

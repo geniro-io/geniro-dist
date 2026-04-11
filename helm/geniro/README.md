@@ -14,6 +14,7 @@ Redis, and Qdrant as bundled dependencies.
 | **API** (NestJS backend) | `razumru/geniro-api` | 5000 | Always enabled |
 | **Web** (React/Vite frontend) | `razumru/geniro-web` | 4173 | Always enabled |
 | **LiteLLM** (LLM proxy) | `ghcr.io/berriai/litellm` | 4000 | Enabled by default |
+| **OpenBao** (Secrets Vault — Vault fork) | `openbao/openbao` | 8200 | Enabled by default |
 | **Keycloak** (identity provider) | `quay.io/keycloak/keycloak` | 8080 | Enabled by default |
 | **PostgreSQL** (pgvector) | `pgvector/pgvector:pg17` | 5432 | Subchart, enabled by default |
 | **Redis** | Bitnami default | 6379 | Subchart, enabled by default |
@@ -262,6 +263,61 @@ startup**. After first boot:
 
 - **To re-seed from values:** Delete the `litellm` database in PostgreSQL and
   redeploy. This resets all LiteLLM state.
+
+---
+
+## OpenBao Secrets Vault
+
+OpenBao (a HashiCorp Vault fork) stores user-managed secrets that graph nodes
+reference by name. The API resolves secret names to values at graph compile time
+and injects them as runtime environment variables into agent execution sandboxes.
+This allows users to manage credentials (API keys, tokens, connection strings)
+centrally without embedding them in graph definitions.
+
+### Default Configuration
+
+The bundled OpenBao instance runs with local file storage backed by a single PVC
+(`1Gi` by default). On first startup, the entrypoint script automatically
+initializes the vault, unseals it, enables the KV v2 engine at `secret/`, and
+creates a static root token `dev-openbao-token` for use by the API.
+
+The API is configured via two environment variables injected automatically:
+
+| Env Var | Value (bundled) | Source |
+|---|---|---|
+| `OPENBAO_ADDR` | `http://<release>-openbao:8200` | ConfigMap (resolved by `geniro.openbaoAddr` helper) |
+| `OPENBAO_TOKEN` | `dev-openbao-token` | Secret |
+
+### External OpenBao / HashiCorp Vault
+
+To use an existing OpenBao or HashiCorp Vault instance instead of the bundled one:
+
+```yaml
+openbao:
+  enabled: false
+
+externalOpenbao:
+  addr: "https://vault.example.com"
+  token: "<scoped-policy-token>"   # NOT a root token in production
+```
+
+When `openbao.enabled=false`, `externalOpenbao.addr` is required (the chart will
+fail rendering if it is empty).
+
+### Security Note
+
+The default token `dev-openbao-token` is a **root token** created solely for
+convenience in single-tenant dev and staging environments. It grants unrestricted
+access to the vault.
+
+**For production deployments:**
+
+1. Set `openbao.enabled: false`.
+2. Provision a hardened external OpenBao or HashiCorp Vault instance.
+3. Create a scoped policy that grants only `read` access to the `secret/` KV path.
+4. Set `externalOpenbao.token` to a token issued under that scoped policy.
+
+Never use a root token in a production or multi-tenant environment.
 
 ---
 

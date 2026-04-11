@@ -12,7 +12,7 @@ Deployment artifacts, packaging, and infrastructure tools for the **Geniro AI Ag
 
 | Directory | Description |
 |---|---|
-| [`helm/geniro/`](helm/geniro/) | Umbrella Helm chart — deploys API, Web, LiteLLM, Daytona, PostgreSQL, Redis, Keycloak, Qdrant |
+| [`helm/geniro/`](helm/geniro/) | Umbrella Helm chart — deploys API, Web, LiteLLM, OpenBao, Daytona, PostgreSQL, Redis, Keycloak, Qdrant |
 
 > More directories will be added over time: Homebrew formula, docker-compose overrides, etc.
 

@@ -206,6 +206,59 @@ externalLitellm:
   url: ""   # e.g., http://my-litellm.example.com:4000
 
 # -----------------------------------------------------------------------------
+# OpenBao (Secrets Vault) — HashiCorp Vault fork
+# -----------------------------------------------------------------------------
+# Stores user-managed secrets referenced by graph nodes. The API resolves
+# secret names to values at graph compile time and injects them as runtime
+# env vars. Uses local file storage with a single PVC.
+#
+# SECURITY NOTE: The default token is a root token suitable ONLY for
+# single-tenant dev/staging deployments. For production, disable the bundled
+# instance and point externalOpenbao.addr to a hardened vault with a
+# scoped policy token.
+openbao:
+  enabled: true
+
+  image:
+    repository: openbao/openbao
+    # NOTE: 'latest' is a rolling tag. For production, pin to a specific version.
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  replicas: 1
+  port: 8200
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  service:
+    type: ClusterIP
+    port: 8200
+
+  persistence:
+    size: 1Gi
+    # storageClassName: ""  # Uses cluster default if unset
+
+  podSecurityContext: {}
+  containerSecurityContext:
+    capabilities:
+      add:
+        - IPC_LOCK
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# External OpenBao — use when openbao.enabled=false
+externalOpenbao:
+  addr: ""    # e.g., https://vault.example.com
+  token: ""   # Scoped policy token (NOT a root token)
+
+# -----------------------------------------------------------------------------
 # Daytona (Sandbox Runtime) — disabled by default
 # -----------------------------------------------------------------------------
 daytona:
