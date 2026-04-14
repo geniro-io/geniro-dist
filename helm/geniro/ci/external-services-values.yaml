@@ -1,4 +1,7 @@
 # CI test: validate template rendering with all external services (BYO mode)
+runtime:
+  provider: daytona
+
 secrets:
   openrouterApiKey: "sk-or-test"
   litellmMasterKey: "test-master"

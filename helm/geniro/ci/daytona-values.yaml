@@ -1,5 +1,8 @@
 # WARNING: These credentials are for CI template validation only. Never use in a real cluster.
 # CI test: validate template rendering with Daytona enabled
+runtime:
+  provider: daytona
+
 secrets:
   openrouterApiKey: "sk-or-test"
   litellmMasterKey: "test-master"
