@@ -401,7 +401,10 @@ k8sRuntime:
       memory: 2Gi
 
   # Time to wait for a newly-created pod to reach Ready before failing start().
-  readyTimeoutMs: 60000
+  # Sized for a cold image pull on a node without the sandbox image cached.
+  # Operators with a registry mirror (Harbor, in-cluster proxy) can safely
+  # reduce this to 60000.
+  readyTimeoutMs: 180000
 
   # Warm pool: pre-warm N pods so the next graph execution claims one with
   # near-zero cold-start. 0 disables the pool (cold start per execution).

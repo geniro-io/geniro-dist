@@ -396,6 +396,23 @@ On managed clusters without gVisor (e.g. some GKE regions, Kind, Minikube),
 leave `runtimeClass` empty so pods schedule under the default runtime.
 You lose the microVM-like isolation but keep namespace + RBAC boundaries.
 
+#### Cold-Start and Warm Pool
+
+First pod on each node must pull the sandbox image from the registry
+(Docker Hub or your mirror). Typical pull times:
+
+- Docker Hub, no mirror: 60-180s for a 500MB image
+- In-cluster registry / Harbor: 5-15s
+- After first pull: <2s (node cache via `imagePullPolicy: IfNotPresent`)
+
+For latency-sensitive workloads set `k8sRuntime.warmPool.size` to 1-2. The
+chart pre-creates idle sandbox pods so each graph execution claims a ready
+pod instead of waiting for create+pull. Warm pool also ensures the image
+stays cached on the nodes that host the pool.
+
+Default timeout is `readyTimeoutMs: 180000` (3 min) — sized to survive a
+cold Docker Hub pull. Reduce it if you use a mirror.
+
 #### Switching providers
 
 ```bash
