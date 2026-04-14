@@ -58,10 +58,26 @@ data:
   OPENBAO_ADDR: {{ include "geniro.openbaoAddr" . | quote }}
 
   # Runtime
-  DEFAULT_RUNTIME_TYPE: {{ if or .Values.daytona.enabled .Values.externalDaytona.apiUrl }}"Daytona"{{ else }}"Docker"{{ end }}
+  DEFAULT_RUNTIME_TYPE: {{ if eq .Values.runtime.provider "k8s" }}"K8s"{{ else if eq .Values.runtime.provider "daytona" }}"Daytona"{{ else }}"Docker"{{ end }}
   DOCKER_RUNTIME_IMAGE: {{ .Values.api.env.DOCKER_RUNTIME_IMAGE | default "razumru/geniro-runtime:latest" | quote }}
-  {{- if .Values.api.mountDockerSocket }}
+  {{- if include "geniro.mountDockerSocket" . }}
   DOCKER_SOCKET: "/var/run/docker.sock"
+  {{- end }}
+
+  # K8s sandbox runtime
+  {{- if include "geniro.isK8sRuntime" . }}
+  K8S_IN_CLUSTER: "true"
+  K8S_RUNTIME_NAMESPACE: {{ .Values.k8sRuntime.namespace | quote }}
+  K8S_RUNTIME_IMAGE: {{ .Values.k8sRuntime.image | quote }}
+  K8S_RUNTIME_CLASS: {{ .Values.k8sRuntime.runtimeClass | quote }}
+  K8S_RUNTIME_SERVICE_ACCOUNT: {{ include "geniro.k8sRuntimeSaName" . | quote }}
+  K8S_RUNTIME_CPU_REQUEST: {{ .Values.k8sRuntime.resources.requests.cpu | quote }}
+  K8S_RUNTIME_CPU_LIMIT: {{ .Values.k8sRuntime.resources.limits.cpu | quote }}
+  K8S_RUNTIME_MEMORY_REQUEST: {{ .Values.k8sRuntime.resources.requests.memory | quote }}
+  K8S_RUNTIME_MEMORY_LIMIT: {{ .Values.k8sRuntime.resources.limits.memory | quote }}
+  K8S_RUNTIME_READY_TIMEOUT_MS: {{ .Values.k8sRuntime.readyTimeoutMs | int64 | quote }}
+  K8S_WARM_POOL_SIZE: {{ .Values.k8sRuntime.warmPool.size | int64 | quote }}
+  K8S_WARM_POOL_TTL_MS: {{ .Values.k8sRuntime.warmPool.ttlMs | int64 | quote }}
   {{- end }}
 
   # Versions

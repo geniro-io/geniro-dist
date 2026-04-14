@@ -1,0 +1,69 @@
+{{- if include "geniro.isK8sRuntime" . }}
+{{- $apiSa := include "geniro.apiSaName" . }}
+{{- $runtimeSa := include "geniro.k8sRuntimeSaName" . }}
+{{- $runtimeNs := .Values.k8sRuntime.namespace }}
+{{- $releaseNs := .Release.Namespace }}
+---
+{{- if .Values.k8sRuntime.serviceAccount.createApi }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $apiSa }}
+  namespace: {{ $releaseNs }}
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+{{- end }}
+{{- if .Values.k8sRuntime.serviceAccount.createRuntime }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $runtimeSa }}
+  namespace: {{ $runtimeNs }}
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: k8s-runtime
+{{- end }}
+{{- if .Values.k8sRuntime.rbac.create }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "geniro.fullname" . }}-k8s-runtime
+  namespace: {{ $runtimeNs }}
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: k8s-runtime
+rules:
+  # Pod lifecycle: create fresh sandboxes, read status, clean up.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Exec streaming: the K8s Exec API multiplexes stdin/stdout/stderr over SPDY.
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+  # Log tailing (used by status checks and debug).
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "geniro.fullname" . }}-k8s-runtime
+  namespace: {{ $runtimeNs }}
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: k8s-runtime
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "geniro.fullname" . }}-k8s-runtime
+subjects:
+  - kind: ServiceAccount
+    name: {{ $apiSa }}
+    namespace: {{ $releaseNs }}
+{{- end }}
+{{- end }}

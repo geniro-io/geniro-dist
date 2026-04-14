@@ -1,0 +1,13 @@
+{{- if and (include "geniro.isK8sRuntime" .) .Values.k8sRuntime.createNamespace }}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.k8sRuntime.namespace | quote }}
+  labels:
+    {{- include "geniro.labels" . | nindent 4 }}
+    app.kubernetes.io/component: k8s-runtime
+  annotations:
+    # Helm keeps this namespace across upgrades; deletion happens only on
+    # explicit `helm uninstall` and requires the namespace to be empty.
+    helm.sh/resource-policy: keep
+{{- end }}

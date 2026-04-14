@@ -20,8 +20,10 @@ annotations:
   litellm/default-tag: "main-stable"
   nginx/version: "1.27-alpine"
   artifacthub.io/changes: |
-    - kind: changed
-      description: "Renamed camelCase env var keys to uppercase (BREAKING)"
+    - kind: added
+      description: "runtime.provider enum (docker|daytona|k8s) as the single source of truth for sandbox backend selection"
+    - kind: added
+      description: "Kubernetes Pod sandbox runtime (k8sRuntime.*) with namespace, RBAC, and gVisor RuntimeClass support"
 
 dependencies:
   - name: postgresql

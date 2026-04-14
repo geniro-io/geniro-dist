@@ -147,6 +147,50 @@ Resolve Zitadel OIDC issuer URL.
 {{- end }}
 
 {{/*
+Returns "true" when the k8s Pod sandbox runtime is active.
+*/}}
+{{- define "geniro.isK8sRuntime" -}}
+{{- if eq .Values.runtime.provider "k8s" -}}true{{- end -}}
+{{- end }}
+
+{{/*
+Returns "true" when Daytona is the active sandbox runtime.
+*/}}
+{{- define "geniro.isDaytonaRuntime" -}}
+{{- if eq .Values.runtime.provider "daytona" -}}true{{- end -}}
+{{- end }}
+
+{{/*
+Returns "true" when the API pod should mount the host Docker socket.
+Auto-enabled when runtime.provider=docker; can also be forced via
+api.mountDockerSocket=true.
+*/}}
+{{- define "geniro.mountDockerSocket" -}}
+{{- if or .Values.api.mountDockerSocket (eq .Values.runtime.provider "docker") -}}true{{- end -}}
+{{- end }}
+
+{{/*
+API ServiceAccount name (used when runtime.provider=k8s).
+Empty string means "don't set serviceAccountName" (falls back to the namespace default SA).
+*/}}
+{{- define "geniro.apiSaName" -}}
+{{- if include "geniro.isK8sRuntime" . }}
+{{- if .Values.k8sRuntime.serviceAccount.apiName }}
+{{- .Values.k8sRuntime.serviceAccount.apiName }}
+{{- else }}
+{{- printf "%s-api" (include "geniro.fullname" .) }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{/*
+ServiceAccount name that sandbox pods run as (in the runtime namespace).
+*/}}
+{{- define "geniro.k8sRuntimeSaName" -}}
+{{- default "geniro-runtime" .Values.k8sRuntime.serviceAccount.runtimeName }}
+{{- end }}
+
+{{/*
 Secret name — existing or generated.
 */}}
 {{- define "geniro.secretName" -}}
@@ -180,6 +224,22 @@ Called from configmap.yaml to surface errors at render time.
 {{- if and .Values.externalDaytona.apiUrl (not .Values.externalDaytona.apiKey) (not .Values.secrets.existingSecret) }}
 {{- fail "externalDaytona.apiKey is required when externalDaytona.apiUrl is set and secrets.existingSecret is not used." }}
 {{- end }}
+{{- $valid := list "docker" "daytona" "k8s" }}
+{{- if not (has .Values.runtime.provider $valid) }}
+{{- fail (printf "runtime.provider must be one of: docker, daytona, k8s. Got: %q" .Values.runtime.provider) }}
+{{- end }}
+{{- if eq .Values.runtime.provider "daytona" }}
+{{- if and (not .Values.daytona.enabled) (not .Values.externalDaytona.apiUrl) }}
+{{- fail "runtime.provider=daytona requires either daytona.enabled=true (bundled) or externalDaytona.apiUrl (external)." }}
+{{- end }}
+{{- else }}
+{{- if .Values.daytona.enabled }}
+{{- fail (printf "daytona.enabled=true is only valid when runtime.provider=daytona. Current provider: %q" .Values.runtime.provider) }}
+{{- end }}
+{{- if .Values.externalDaytona.apiUrl }}
+{{- fail (printf "externalDaytona.apiUrl is only valid when runtime.provider=daytona. Current provider: %q" .Values.runtime.provider) }}
+{{- end }}
+{{- end }}
 {{- if and .Values.keycloak.enabled (or (eq .Values.keycloak.auth.adminPassword "admin") (lt (len .Values.keycloak.auth.adminPassword) 8)) }}
 {{- fail "keycloak.auth.adminPassword must be at least 8 characters and not 'admin'." }}
 {{- end }}
@@ -195,6 +255,14 @@ Called from configmap.yaml to surface errors at render time.
 {{- end }}
 {{- if not .Values.externalOpenbao.token }}
 {{- fail "externalOpenbao.token is required when openbao.enabled=false (unless using secrets.existingSecret)" }}
+{{- end }}
+{{- end }}
+{{- if include "geniro.isK8sRuntime" . }}
+{{- if not .Values.k8sRuntime.namespace }}
+{{- fail "k8sRuntime.namespace is required when runtime.provider=k8s" }}
+{{- end }}
+{{- if eq .Values.k8sRuntime.namespace .Release.Namespace }}
+{{- fail "k8sRuntime.namespace must be different from the release namespace to isolate sandbox pods from platform workloads" }}
 {{- end }}
 {{- end }}
 {{- end }}

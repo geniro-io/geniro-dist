@@ -21,6 +21,7 @@ Redis, and Qdrant as bundled dependencies.
 | **Qdrant** (vector database) | Official | 6333 | Subchart, enabled by default |
 | **Zitadel** (alt identity provider) | `ghcr.io/zitadel/zitadel` | 8080 | Subchart, disabled by default |
 | **Daytona** (sandbox runtime) | `daytonaio/daytona-*` | 3986 | Disabled by default |
+| **K8s Pod runtime** (sandbox runtime) | `razumru/geniro-runtime` | n/a | Disabled by default |
 
 PostgreSQL serves as the shared database backend for the API (geniro), Keycloak,
 LiteLLM, and optionally Zitadel and Daytona. The init script conditionally creates
@@ -318,6 +319,91 @@ access to the vault.
 4. Set `externalOpenbao.token` to a token issued under that scoped policy.
 
 Never use a root token in a production or multi-tenant environment.
+
+---
+
+## Sandbox Runtime — Choosing a Provider
+
+The API uses one sandbox backend to execute graph nodes (shell, file ops,
+subagents, etc.). Pick exactly one with `runtime.provider`:
+
+```yaml
+runtime:
+  provider: docker   # one of: docker, daytona, k8s
+```
+
+| Provider | What it does | When to use | Other values that must be set |
+|---|---|---|---|
+| `docker` | Mounts the host Docker socket on the API pod and runs sandboxes via the node's Docker/Podman daemon. | Single-node dev, quick local install. | none — the chart auto-mounts the socket. |
+| `daytona` | Delegates sandbox lifecycle to Daytona. | When you already run Daytona or want its snapshot-based runtimes. | `daytona.enabled=true` (bundled) *or* `externalDaytona.apiUrl` (external). |
+| `k8s` | Creates short-lived Pods in a dedicated namespace, execs via the Kubernetes Exec API over SPDY. | Multi-tenant production, especially with gVisor. | `k8sRuntime.*` (see below). |
+
+Guards enforced at render time:
+
+- `runtime.provider=daytona` requires either `daytona.enabled=true` or `externalDaytona.apiUrl`
+- `runtime.provider` ∈ {`docker`, `k8s`} forbids `daytona.enabled=true` and `externalDaytona.apiUrl`
+- `runtime.provider=k8s` requires `k8sRuntime.namespace` ≠ the release namespace
+
+Docker-socket mode (`api.mountDockerSocket=true`) is auto-set when
+`runtime.provider=docker`. You can still force it on for other providers,
+but it's rarely useful and always a security footgun.
+
+### Kubernetes Pod Mode (`runtime.provider=k8s`)
+
+```yaml
+runtime:
+  provider: k8s
+
+k8sRuntime:
+  namespace: geniro-runtimes      # must differ from the release namespace
+  createNamespace: true
+  runtimeClass: gvisor            # "" to run with runc (no extra isolation)
+  image: razumru/geniro-runtime:latest
+
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits:   { cpu: 1000m, memory: 2Gi }
+
+  warmPool:
+    size: 0                       # >0 enables a warm pool (near-zero cold start)
+    ttlMs: 1800000
+
+  serviceAccount:
+    createApi: true               # creates <release>-api and binds it on the API Deployment
+    createRuntime: true           # creates geniro-runtime in the runtime namespace
+  rbac:
+    create: true                  # Role + RoleBinding for pods + pods/exec
+```
+
+The chart then creates:
+
+- `Namespace` (when `createNamespace=true`) — annotated with
+  `helm.sh/resource-policy: keep` so `helm uninstall` leaves it alone
+  when it still contains sandbox pods.
+- `ServiceAccount` for the API (release namespace) and for sandbox pods
+  (runtime namespace).
+- `Role` + `RoleBinding` in the runtime namespace granting the API SA:
+  `pods` (get/list/watch/create/update/patch/delete),
+  `pods/exec` (create), `pods/log` (get/list).
+
+#### gVisor RuntimeClass
+
+For production-grade isolation, install gVisor on the cluster and make sure
+a `RuntimeClass` with `handler: runsc` exists under the name in
+`k8sRuntime.runtimeClass`. Without it, sandbox pods fail to schedule.
+
+On managed clusters without gVisor (e.g. some GKE regions, Kind, Minikube),
+leave `runtimeClass` empty so pods schedule under the default runtime.
+You lose the microVM-like isolation but keep namespace + RBAC boundaries.
+
+#### Switching providers
+
+```bash
+helm upgrade geniro ./helm/geniro \
+  --set runtime.provider=k8s \
+  --set daytona.enabled=false \
+  --reuse-values
+```
 
 ---
 

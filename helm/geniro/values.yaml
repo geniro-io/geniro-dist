@@ -6,6 +6,25 @@
 #
 
 # -----------------------------------------------------------------------------
+# Runtime — which sandbox backend the API uses for graph node execution
+# -----------------------------------------------------------------------------
+# One of:
+#   docker   — mount the host Docker socket on the API pod (simplest, but
+#              grants root-equivalent access to the node). Requires the
+#              node to have a local Docker or Podman daemon.
+#   daytona  — Daytona sandbox runtime. Set daytona.enabled=true to deploy
+#              the bundled Daytona services, or externalDaytona.apiUrl to
+#              point at an existing Daytona instance.
+#   k8s      — Kubernetes Pod sandboxes. The API creates a short-lived Pod
+#              per execution in a dedicated namespace. Recommended for
+#              multi-tenant production with gVisor RuntimeClass.
+#
+# The provider gates which of daytona.*, externalDaytona.*, k8sRuntime.*,
+# and api.mountDockerSocket are allowed. See _helpers.tpl guards.
+runtime:
+  provider: docker
+
+# -----------------------------------------------------------------------------
 # API (Backend — NestJS)
 # -----------------------------------------------------------------------------
 api:
@@ -56,9 +75,10 @@ api:
     activeDeadlineSeconds: 300
 
   extraEnv: []
-  # Mount the Docker socket for container execution. SECURITY: grants root-equivalent
-  # access on the host node. Set to true ONLY when DEFAULT_RUNTIME_TYPE=Docker.
-  # When using Daytona (daytona.enabled=true), keep this false.
+  # Mount the Docker socket for container execution. Auto-enabled when
+  # runtime.provider=docker. Setting true explicitly forces the mount even
+  # with a different provider (rarely useful). SECURITY: grants
+  # root-equivalent access on the host node.
   mountDockerSocket: false
   podSecurityContext: {}
   containerSecurityContext: {}
@@ -346,6 +366,73 @@ daytona:
 externalDaytona:
   apiUrl: ""     # e.g., http://daytona-api.daytona.svc.cluster.local:3000/api
   apiKey: ""     # API key for authenticating with the external Daytona instance
+
+# -----------------------------------------------------------------------------
+# Kubernetes Pod Sandbox Runtime
+# -----------------------------------------------------------------------------
+# Active when runtime.provider=k8s. The API creates short-lived Pods in a
+# dedicated namespace as sandboxes for graph node execution (shell, file ops,
+# subagents, etc.). Recommended isolation: the gVisor RuntimeClass, which runs
+# each pod in a user-space kernel with syscall filtering. Install gVisor on
+# the cluster and set runtimeClass to the installed RuntimeClass name
+# (commonly "gvisor").
+#
+# SECURITY: the API's ServiceAccount receives namespaced pods/pods-exec RBAC
+# in the runtime namespace. Do NOT reuse that namespace for other workloads.
+k8sRuntime:
+  # Namespace where sandbox pods are created. Must be different from the
+  # release namespace. When createNamespace=true the chart creates it.
+  namespace: geniro-runtimes
+  createNamespace: true
+
+  # gVisor or other sandbox RuntimeClass. Leave empty to skip runtimeClassName
+  # (pods will run under the node's default runtime — runc — with no extra
+  # isolation). Production deployments should install gVisor and pin this.
+  runtimeClass: gvisor
+
+  # Sandbox image used for each pod. Override with a Harbor-hosted or pinned
+  # tag to avoid Docker Hub rate limits.
+  image: razumru/geniro-runtime:latest
+
+  # Per-pod resource requests/limits. Tune for the workload profile.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 2Gi
+
+  # Time to wait for a newly-created pod to reach Ready before failing start().
+  readyTimeoutMs: 60000
+
+  # Warm pool: pre-warm N pods so the next graph execution claims one with
+  # near-zero cold-start. 0 disables the pool (cold start per execution).
+  warmPool:
+    size: 0
+    ttlMs: 1800000   # 30 minutes — evicts stale pool pods
+
+  # ServiceAccount names and RBAC.
+  # - api:     bound to the API Deployment; grants namespaced pods+pods/exec
+  #            rights in the runtime namespace via a RoleBinding.
+  # - runtime: ServiceAccount the sandbox pods themselves run as. Kept
+  #            minimal (no API access by default) to limit blast radius.
+  serviceAccount:
+    # When createApi=true the chart creates an API ServiceAccount and wires
+    # it onto the API Deployment. When false, set api.serviceAccountName or
+    # rely on the default SA (which will NOT have pods/exec rights).
+    createApi: true
+    apiName: ""        # Defaults to "<release>-api" when empty.
+
+    # When createRuntime=true the chart creates a ServiceAccount for sandbox
+    # pods in the runtime namespace. API sets spec.serviceAccountName to this.
+    createRuntime: true
+    runtimeName: geniro-runtime
+
+  # RBAC — Role + RoleBinding in the runtime namespace. Disable only if you
+  # provision equivalent RBAC out-of-band (e.g., via an infra IaC pipeline).
+  rbac:
+    create: true
 
 # -----------------------------------------------------------------------------
 # PostgreSQL (Bitnami subchart)

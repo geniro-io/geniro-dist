@@ -2,6 +2,16 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["docker", "daytona", "k8s"],
+          "description": "Sandbox backend the API uses for graph node execution. See values.yaml for the allowed combinations with daytona.*, externalDaytona.*, and k8sRuntime.*."
+        }
+      }
+    },
     "api": {
       "type": "object",
       "properties": {
@@ -71,6 +81,57 @@
       "properties": {
         "apiUrl": { "type": "string" },
         "apiKey": { "type": "string" }
+      }
+    },
+    "k8sRuntime": {
+      "type": "object",
+      "properties": {
+        "namespace": { "type": "string" },
+        "createNamespace": { "type": "boolean" },
+        "runtimeClass": { "type": "string" },
+        "image": { "type": "string" },
+        "readyTimeoutMs": { "type": "integer", "minimum": 1000 },
+        "resources": {
+          "type": "object",
+          "properties": {
+            "requests": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              }
+            },
+            "limits": {
+              "type": "object",
+              "properties": {
+                "cpu": { "type": "string" },
+                "memory": { "type": "string" }
+              }
+            }
+          }
+        },
+        "warmPool": {
+          "type": "object",
+          "properties": {
+            "size": { "type": "integer", "minimum": 0 },
+            "ttlMs": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "serviceAccount": {
+          "type": "object",
+          "properties": {
+            "createApi": { "type": "boolean" },
+            "apiName": { "type": "string" },
+            "createRuntime": { "type": "boolean" },
+            "runtimeName": { "type": "string" }
+          }
+        },
+        "rbac": {
+          "type": "object",
+          "properties": {
+            "create": { "type": "boolean" }
+          }
+        }
       }
     },
     "keycloak": {
