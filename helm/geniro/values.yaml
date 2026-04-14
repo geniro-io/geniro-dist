@@ -98,9 +98,10 @@ api:
     # Zitadel — URL and issuer are resolved automatically when zitadel.enabled=true.
     # Set clientId after Zitadel first-boot OIDC app creation (see NOTES.txt).
     ZITADEL_CLIENT_ID: ""
-    # Image used for sandbox execution (applies to both Daytona and Docker runtimes).
-    # For Daytona: this is the image Daytona builds a snapshot from on first use.
-    # For Docker: this is the image pulled directly by the Docker daemon.
+    # Image used for sandbox execution (applies to Docker, Daytona, and K8s runtimes).
+    # For Docker: pulled directly by the Docker daemon.
+    # For Daytona: the image Daytona builds a snapshot from on first use.
+    # For K8s: the container image for sandbox pods.
     # Override with a Harbor-hosted or pinned tag to avoid Docker Hub rate limits.
     # Example: harbor-daytona.openfab.dev/library/geniro-runtime:1.21.1-latest
     DOCKER_RUNTIME_IMAGE: "razumru/geniro-runtime:latest"
@@ -389,10 +390,6 @@ k8sRuntime:
   # (pods will run under the node's default runtime — runc — with no extra
   # isolation). Production deployments should install gVisor and pin this.
   runtimeClass: gvisor
-
-  # Sandbox image used for each pod. Override with a Harbor-hosted or pinned
-  # tag to avoid Docker Hub rate limits.
-  image: razumru/geniro-runtime:latest
 
   # Per-pod resource requests/limits. Tune for the workload profile.
   resources:

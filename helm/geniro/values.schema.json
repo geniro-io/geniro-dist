@@ -89,7 +89,6 @@
         "namespace": { "type": "string" },
         "createNamespace": { "type": "boolean" },
         "runtimeClass": { "type": "string" },
-        "image": { "type": "string" },
         "readyTimeoutMs": { "type": "integer", "minimum": 1000 },
         "resources": {
           "type": "object",

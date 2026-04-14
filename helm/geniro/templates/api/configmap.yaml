@@ -68,7 +68,6 @@ data:
   {{- if include "geniro.isK8sRuntime" . }}
   K8S_IN_CLUSTER: "true"
   K8S_RUNTIME_NAMESPACE: {{ .Values.k8sRuntime.namespace | quote }}
-  K8S_RUNTIME_IMAGE: {{ .Values.k8sRuntime.image | quote }}
   K8S_RUNTIME_CLASS: {{ .Values.k8sRuntime.runtimeClass | quote }}
   K8S_RUNTIME_SERVICE_ACCOUNT: {{ include "geniro.k8sRuntimeSaName" . | quote }}
   K8S_RUNTIME_CPU_REQUEST: {{ .Values.k8sRuntime.resources.requests.cpu | quote }}

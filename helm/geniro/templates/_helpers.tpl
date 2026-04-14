@@ -265,6 +265,11 @@ Called from configmap.yaml to surface errors at render time.
 {{- fail "k8sRuntime.namespace must be different from the release namespace to isolate sandbox pods from platform workloads" }}
 {{- end }}
 {{- end }}
+{{- if hasKey .Values "k8sRuntime" }}
+{{- if hasKey .Values.k8sRuntime "image" }}
+{{- fail "k8sRuntime.image has been removed. The sandbox image is now controlled by api.env.DOCKER_RUNTIME_IMAGE for all runtime providers (docker, daytona, k8s)." }}
+{{- end }}
+{{- end }}
 {{- end }}
 
 {{/*
