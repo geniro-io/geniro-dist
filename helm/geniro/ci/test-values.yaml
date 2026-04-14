@@ -1,5 +1,8 @@
 # WARNING: These credentials are for CI template validation only. Never use in a real cluster.
 # Minimal values for helm lint and helm template validation
+runtime:
+  provider: daytona
+
 secrets:
   openrouterApiKey: "sk-or-test"
   litellmMasterKey: "test-master"
