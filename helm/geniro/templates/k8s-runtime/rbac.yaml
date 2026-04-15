@@ -40,10 +40,11 @@ rules:
   - apiGroups: [""]
     resources: ["pods"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-  # Exec streaming: the K8s Exec API multiplexes stdin/stdout/stderr over SPDY.
+  # Exec streaming: SPDY uses POST (=create), WebSocket uses GET (=get).
+  # @kubernetes/client-node v1+ defaults to WebSocket, so both verbs are required.
   - apiGroups: [""]
     resources: ["pods/exec"]
-    verbs: ["create"]
+    verbs: ["create", "get"]
   # Log tailing (used by status checks and debug).
   - apiGroups: [""]
     resources: ["pods/log"]
